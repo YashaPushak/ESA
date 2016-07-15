@@ -38,15 +38,16 @@ def getRuntimesFromFile(dirName, filename):
                     sizeNumInsts[ int(terms[1]) ] = int(terms[2])
                 continue
             terms = line.split(",")
-            if int(terms[1]) not in sizeRuntimes:
-                sizeRuntimes[ int(terms[1]) ] = []
+            #YP: added float() before int() for terms[1] in three spots that follow
+            if int(float(terms[1])) not in sizeRuntimes:
+                sizeRuntimes[ int(float(terms[1])) ] = []
             try:
                 runtime = float(terms[2])
             except:
                 runtime = float('inf')
             if runtime < 0:
                 runtime = float('inf')
-            sizeRuntimes[ int(terms[1]) ].append( runtime )
+            sizeRuntimes[ int(float(terms[1])) ].append( runtime )
     for size in sorted( sizeRuntimes ):
         sizes.append(size)
         runtimes.append( sizeRuntimes[size] )
