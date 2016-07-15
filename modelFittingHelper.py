@@ -53,7 +53,7 @@ def genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes
 def fitModels( algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes, medians, medianIntervals, threshold, gnuplotPath, modelFileName ):
     #YP: added some extra exception handling and error checking in case
     #gnuplot is unavailable
-    os.system(gnuplotPath + "/gnuplot fitModels.plt >& fit.log")
+    os.system(gnuplotPath + "gnuplot fitModels.plt >& fit.log")
     with open('fit.log') as f_fit:
         if('No such file or directory' in f_fit.read()):
             print('[ERROR]: Unable to run gnuplot.')

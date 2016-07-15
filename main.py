@@ -190,7 +190,7 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
                         residuePlotTemplate = terms[1].strip()
                     #YP: Added gnuplot path to configuration file
                     if terms[0].strip() == "gnuplotPath":
-                        gnuplotPath = terms[1].strip()
+                        gnuplotPath = terms[1].strip() + '/'
 
     #   prepare template files
     if not os.path.exists( fileDir+"/"+modelFileName ):
@@ -243,8 +243,8 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     #   generate plots
     #YP: Added gnuplotPath
     #YP: Instead of directing output to /dev/null I'm sending it to a log file and checking for the beginning of an error message in the gnuplot file. If there is one, we print a message and save the output file.
-    os.system(gnuplotPath + "/gnuplot plotModels.plt >& plotModels.log")
-    os.system(gnuplotPath + "/gnuplot plotResidues.plt >& plotResidues.log")
+    os.system(gnuplotPath + "gnuplot plotModels.plt >& plotModels.log")
+    os.system(gnuplotPath + "gnuplot plotResidues.plt >& plotResidues.log")
     logFiles = ['plotModels', 'plotResidues']
     for logFile in logFiles:
         with open(logFile + '.log') as f_log:

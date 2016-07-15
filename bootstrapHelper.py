@@ -43,7 +43,7 @@ def doBootstrapAnalysis(sizes, data, numInsts, threshold, statistic, modelNames,
         for j in range(0, len(data)):
             runtimes.append( bStat[j][i] )
         summarizeRuntimes.genGnuplotFiles(".", sizes, runtimes, threshold, statistic)
-        os.system(gnuplotPath + "/gnuplot bootstrap-fit.plt >& /dev/null")
+        os.system(gnuplotPath + "gnuplot bootstrap-fit.plt >& /dev/null")
         
         with open("fit-models.log") as fitsFile:
             for line in fitsFile:
