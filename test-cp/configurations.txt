@@ -1,0 +1,12 @@
+#TODO: More of these should be exposed as parameters later
+fileName : median-runtimes.csv
+algName : p15S363
+instName : RUE Instances
+numTrainingData : 4
+alpha : 95
+numBootstrapSamples : 1000
+statistic : median
+latexTemplate : template-AutoScaling.txt
+modelPlotTemplate : template_plotModels.plt
+residuePlotTemplate : template_plotResidues.plt
+gnuplotPath : /cs/public/lib/pkg/gnuplot-5.0.3/bin/
