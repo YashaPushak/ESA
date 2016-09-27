@@ -3,6 +3,8 @@
 set terminal pdfcairo dashed fontscale 0.5
 set termopt enhanced
 #set logscale
+set log x
+set log y
 set xlabel 'n'
 set ylabel 'CPU time [sec]'
 set format y "10^{%T}"
