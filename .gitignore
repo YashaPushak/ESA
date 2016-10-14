@@ -3,3 +3,4 @@
 *.zip
 test/
 test-cp/
+scenarios/
