@@ -6,16 +6,29 @@ import csvHelper
 import latexHelper
 
 def calStatistic( list, statistic ):
-    if statistic == "mean":
+    if statistic.lower() == "mean":
         return numpy.mean( list )
-    if statistic[0] == "q" or statistic[0] == "Q":
+    if statistic.lower() == "median":
+        statistic = "q50"
+    if statistic[0].lower() == "q":
         percent = float( statistic[1:] )
         if percent<1:
             percent *= 100
-#       return numpy.percentile( list, percent )
-        return sorted(list)[ int(len(list)*percent/100)-1 ]
-#   return numpy.median( list )
-    return sorted(list)[ (len(list))/2-1 ]
+
+        list = sorted(list)
+        I = len(list)*(percent/100.0) - 1
+        #Check if I is an integer
+        if(int(I) - I == 0):
+           return (list[int(I)] + list[int(I+1)])/2
+        else:
+           return list[int(math.ceil(I))]
+
+        #YP: The original code here used to always return a lower-bound on
+        #the quantiles. I have changed this..
+        #This is what Zongxu used to have: 
+        #return sorted(list)[ int(len(list)*percent/100)-1 ]
+    print('[Error]: Invalid summary statistic input: ' + statistic)
+    raise Exception('Invalid summary statistic input.')
 
 def calStatisticIntervals( list, statistic, numInsts ):
     if statistic == "mean" or len(list) == numInsts:
@@ -23,7 +36,9 @@ def calStatisticIntervals( list, statistic, numInsts ):
     else:
         return [ calStatistic( list+[ 0 for i in range(0, numInsts-len(list)) ], statistic ), calStatistic( list+[ float('inf') for i in range(0, numInsts-len(list)) ], statistic ) ]
 
-def getRuntimesFromFile(dirName, filename):
+def getRuntimesFromFile(dirName, filename, numRunsPerInstance):
+    #YP: Added a warning count.
+    numWarning = 0
     sizes = []
     runtimes = []
     numInsts = []
@@ -34,6 +49,8 @@ def getRuntimesFromFile(dirName, filename):
         for line in runtimesFile:
             if line.strip()[0] == '#':
                 if line.strip()[1:10] == 'instances':#YP: I suspect that this entire if statement (and the following one I marked) are not used in practice, but where originally intended for debugging purposes...
+                    #YP: Actually, based on a paper I have just read, I now believe that this is used for handling instances with unknown optimal solution qualities, and hence, lower bounds on median running times. 
+                    #YP: TODO: Investigate this further. 
                     terms = line.split(",")
                     sizeNumInsts[ int(terms[1]) ] = int(terms[2])
                 continue
@@ -41,13 +58,27 @@ def getRuntimesFromFile(dirName, filename):
             #YP: added float() before int() for terms[1] in three spots that follow
             if int(float(terms[1])) not in sizeRuntimes:
                 sizeRuntimes[ int(float(terms[1])) ] = []
-            try:
-                runtime = float(terms[2])
-            except:
-                runtime = float('inf')
-            if runtime < 0:
-                runtime = float('inf')
-            sizeRuntimes[ int(float(terms[1])) ].append( runtime )
+            #YP: Added loop and error message
+            instRuntimes = []
+            for i in range(2,len(terms)):
+                try:
+                    runtime = float(terms[i])
+                except:
+                    runtime = float('inf')
+                if runtime < 0:
+                    runtime = float('inf')
+                instRuntimes.append(runtime)
+            if(numRunsPerInstance > 0 and not len(instRuntimes) == numRunsPerInstance):
+                numWarning += 1
+                if(numWarning <= 10):
+                    print('[Warning]: Instance ' + terms[0] + ' has ' + str(len(instRuntimes)) + ' running times and not the specified ' + str(numRunsPerInstance) + ' running times.')
+            if('500-1.tsp' == terms[0].strip()):
+                print(instRuntimes)
+            sizeRuntimes[ int(float(terms[1])) ].append( instRuntimes )
+    
+    if(numWarning - 10 > 0):
+        print('[Warning]: ' + str(numWarning - 10) + ' similar warnings suppressed.')
+
     for size in sorted( sizeRuntimes ):
         sizes.append(size)
         runtimes.append( sizeRuntimes[size] )
@@ -69,6 +100,12 @@ def getRuntimesFromFile(dirName, filename):
 #                    if terms[i].strip() == "":
 #                        continue
 #                    runtimes[ i-stIdx ].append( float(terms[i]) )
+    print(sizes)
+#    for i in range(0,len(runtimes)):
+#        for j in range(0,len(runtimes[i])):
+#            print(len(runtimes[i][j]))
+    #print(sizeRuntimes)
+    #print(numInsts)
     return (sizes, runtimes, numInsts)
 
 def prepareRuntimesTexTable(st, ed, sizes, counts, numInsts, means, coeffVars, q10s, q25s, medians, q75s, q90s):
@@ -92,6 +129,7 @@ def prepareRuntimesTexTable(st, ed, sizes, counts, numInsts, means, coeffVars, q
     return res
 
 def prepareRuntimesTexTables(sizes, runtimes, numInsts, threshold, dirName, supportTexFileName="table_Details-dataset-support.tex", challengeTexFileName="table_Details-dataset-challenge.tex"):
+    #TODO: We're going to need to add the numRunsPerInstance here sometime.
     counts = []
     means = []
     coeffVars = []
@@ -133,15 +171,24 @@ def genGnuplotFiles(dirName, sizes, stats, threshold, statistic):
         for i in range(threshold, len(sizes)):
             print >>gnuplotFile, "%d %f" % (sizes[i], stats[i])
 
-def summarizeRuntimes(sizes, runtimes, numInsts, algName, dirName, statistic, threshold=0):
+def summarizeRuntimes(sizes, runtimes, numInsts, algName, dirName, statistic, perInstanceStatistic, threshold=0):
     #YP: Removed what I believe were old debugging messages.
     #print len(runtimes)
     #print len(runtimes[0])
     if threshold<=0 or threshold>=len(sizes):
         threshold = (3*len(sizes)+2)/5
-    counts = prepareRuntimesTexTables( sizes, runtimes, numInsts, threshold, dirName )
-    stats = [ calStatistic( runtimes[i], statistic ) for i in range(0, len(sizes)) ]
-    statIntervals = [ calStatisticIntervals( runtimes[i], statistic, numInsts[i] ) for i in range(0, len(sizes)) ]
+    
+    #YP: Calculate the per-instance statistics and use them in place of what used to be the running times.    
+    runtimeStatistics = [ [calStatistic(runtimes[i][j], perInstanceStatistic) for j in range(0,len(runtimes[i]))] for i in range(0,len(sizes)) ]
+
+    with open('runtime-file.log','w') as f_out:
+        f_out.write('runtimeStatistics = ' + str(runtimeStatistics))
+
+    counts = prepareRuntimesTexTables( sizes, runtimeStatistics, numInsts, threshold, dirName )
+    
+    stats = [ calStatistic( runtimeStatistics[i], statistic ) for i in range(0, len(sizes)) ]
+    #print(stats)
+    statIntervals = [ calStatisticIntervals( runtimeStatistics[i], statistic, numInsts[i] ) for i in range(0, len(sizes)) ]
     genGnuplotFiles( dirName, sizes, stats, threshold, statistic )
     return (counts, stats, statIntervals, threshold)
 

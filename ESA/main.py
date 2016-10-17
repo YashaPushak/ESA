@@ -159,7 +159,7 @@ def evaluateModels( modelNames, threshold, statIntervals, predLos, predUps ):
             res += "the %s model tends to fit the data" % modelNames[k]
     return res
 
-def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the problem instances", modelFileName="models.txt", threshold=0, alpha=95, numBootstrapSamples=100, statistic="median", toModifyModelDefaultParas=False, tableDetailsSupportFileName="table_Details-dataset-support", tableDetailsChallengeFileName="table_Details-dataset-challenge", tableFittedModelsFileName="table_Fitted-models", tableBootstrapIntervalsParaFileName="table_Bootstrap-intervals-of-parameters", tableBootstrapIntervalsSupportFileName="table_Bootstrap-intervals_support", tableBootstrapIntervalsChallengeFileName="table_Bootstrap-intervals_challenge", figureCdfsFileName="cdfs", figureFittedModelsFileName="fittedModels", figureFittedResiduesFileName="fittedResidues", latexTemplate = "template-AutoScaling.tex", modelPlotTemplate = "template_plotModels.plt", residuePlotTemplate = "template_plotResidues.plt", gnuplotPath = ''):
+def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the problem instances", modelFileName="models.txt", threshold=0, alpha=95, numBootstrapSamples=100, statistic="median", toModifyModelDefaultParas=False, tableDetailsSupportFileName="table_Details-dataset-support", tableDetailsChallengeFileName="table_Details-dataset-challenge", tableFittedModelsFileName="table_Fitted-models", tableBootstrapIntervalsParaFileName="table_Bootstrap-intervals-of-parameters", tableBootstrapIntervalsSupportFileName="table_Bootstrap-intervals_support", tableBootstrapIntervalsChallengeFileName="table_Bootstrap-intervals_challenge", figureCdfsFileName="cdfs", figureFittedModelsFileName="fittedModels", figureFittedResiduesFileName="fittedResidues", latexTemplate = "template-AutoScaling.tex", modelPlotTemplate = "template_plotModels.plt", residuePlotTemplate = "template_plotResidues.plt", gnuplotPath = '', numRunsPerInstance = 0, perInstanceStatistic="median"):
     #   get parameter values
     if os.path.exists( fileDir+"/configurations.txt" ):
         with open( fileDir+"/configurations.txt", "r") as configFile:
@@ -191,6 +191,12 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
                     #YP: Added gnuplot path to configuration file
                     if terms[0].strip() == "gnuplotPath":
                         gnuplotPath = terms[1].strip() + '/'
+                    #YP: Added numRunsPerInstance to configuration file
+                    if terms[0].strip() == "numRunsPerInstance":
+                        numRunsPerInstance = int( terms[1].strip() )
+                    #YP: Added perInstanceStatistic to configuration file
+                    if terms[0].strip() == "perInstanceStatistic":
+                        perInstanceStatistic = terms[1].strip()
 
     #   prepare template files
     if not os.path.exists( fileDir+"/"+modelFileName ):
@@ -204,13 +210,13 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     #   move the pdflatex input file
     if not os.path.exists( fileDir+"/pdflatex_input.txt" ):
         os.system( "cp pdflatex_input.txt " + fileDir +"/pdflatex_input.txt" )    
-
+    #print(numRunsPerInstance)
     #   read in runtimes and summarize
-    (sizes, runtimes, numInsts) = summarizeRuntimes.getRuntimesFromFile( fileDir, fileName )
+    (sizes, runtimes, numInsts) = summarizeRuntimes.getRuntimesFromFile( fileDir, fileName, numRunsPerInstance )
 
     cwd = os.getcwd()
     os.chdir( fileDir )
-    (counts, stats, statIntervals, threshold) = summarizeRuntimes.summarizeRuntimes( sizes, runtimes, numInsts, algName, ".", statistic, threshold )
+    (counts, stats, statIntervals, threshold) = summarizeRuntimes.summarizeRuntimes( sizes, runtimes, numInsts, algName, ".", statistic, perInstanceStatistic, threshold )
     # stats = [ summarizeRuntimes.calStatistic( runtimes[i], statistic ) for i in range(0, len(sizes)) ]
 
     #   read in model names and definitions
@@ -220,14 +226,20 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     #   prepare gnuplot scripts
     gnuplotHelper.genGnuplotScripts( modelNames, modelGnuplotDefs, modelNumParas, modelParaDefaults, '.', sizes, modelPlotTemplate, residuePlotTemplate )
     
+
+    #YP: Refactored code to only create bootstrap samples once to save time.
+    bStat = bootstrapHelper.doBootstrap(runtimes, numInsts, numBootstrapSamples, statistic,     perInstanceStatistic)
+
+
     #   calculate confidence intervals of observed data
-    (obsvLos, obsvUps) = bootstrapHelper.getBootstrapIntervals( runtimes, numInsts, numBootstrapSamples, statistic )
+    (obsvLos, obsvUps) = bootstrapHelper.getBootstrapIntervals( bStat )
 
     #   fit models
     modelFittingHelper.fitModels( algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes, stats, statIntervals, threshold, gnuplotPath, modelFileName)
 
+
     #   calculate bootstrap intervals of fitted models
-    (paras, preds) = bootstrapHelper.doBootstrapAnalysis( sizes, runtimes, numInsts, threshold, statistic, modelNames, modelNumParas, modelFuncs, numBootstrapSamples, gnuplotPath )
+    (paras, preds) = bootstrapHelper.doBootstrapAnalysis(bStat[0], sizes, runtimes, threshold, statistic, modelNames, modelNumParas, modelFuncs, numBootstrapSamples, gnuplotPath )
     (paraLos, paraUps) = bootstrapHelper.getLoUps( modelNames, paras )
     csvHelper.genCSV( ".", "table_Bootstrap-intervals-of-parameters.csv", [ ("Confidence intervals of p%d" % i) for i in range(0, max(modelNumParas)) ], [ algName+" "+modelName+". model" for modelName in modelNames ], getIntervals(paraLos, paraUps))
     latexHelper.genTexTableBootstrapParas( algName, modelNames, modelNumParas, paraLos, paraUps )
