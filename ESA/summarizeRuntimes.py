@@ -72,8 +72,7 @@ def getRuntimesFromFile(dirName, filename, numRunsPerInstance):
                 numWarning += 1
                 if(numWarning <= 10):
                     print('[Warning]: Instance ' + terms[0] + ' has ' + str(len(instRuntimes)) + ' running times and not the specified ' + str(numRunsPerInstance) + ' running times.')
-            if('500-1.tsp' == terms[0].strip()):
-                print(instRuntimes)
+            
             sizeRuntimes[ int(float(terms[1])) ].append( instRuntimes )
     
     if(numWarning - 10 > 0):
@@ -100,10 +99,10 @@ def getRuntimesFromFile(dirName, filename, numRunsPerInstance):
 #                    if terms[i].strip() == "":
 #                        continue
 #                    runtimes[ i-stIdx ].append( float(terms[i]) )
-    print(sizes)
+#    print(sizes)
 #    for i in range(0,len(runtimes)):
 #        for j in range(0,len(runtimes[i])):
-#            print(len(runtimes[i][j]))
+#        print(len(runtimes[i]))
     #print(sizeRuntimes)
     #print(numInsts)
     return (sizes, runtimes, numInsts)
