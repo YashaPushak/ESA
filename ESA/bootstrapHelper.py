@@ -93,3 +93,36 @@ def getLoUps( modelNames, data, alpha=95 ):
         dataLos.append( [ summarizeRuntimes.calStatistic(d, 'Q%f'%(50-alpha/2.0)) for d in data[k] ] )
         dataUps.append( [ summarizeRuntimes.calStatistic(d, 'Q%f'%(50+alpha/2.0)) for d in data[k] ] )
     return (dataLos, dataUps)
+
+
+def getBootstrapRMSE(preds, statIntervals, sizes, threshold, modelNames):
+    #Author: Yasha Pushak
+    #Last updated: November 10th, 2016
+    #Calculates the challenge RMSE for the bootstrap models (currently with
+    #the non-bootstrapped data.
+
+    #Initialize the squared error for the test sizes to zero for all of the 
+    #bootstrap models.
+    rmseTests = []
+
+    for k in range(0,len(modelNames)):
+        for j in range(0,len(preds[k][0])):
+            rmseTests.append([0.0, 0.0])
+            
+        bestRMSECount.append(0)
+
+    for k in range(0,len(modelNames)):
+        for i in range(threshold, len(sizes)):
+            for j in range(0,len(preds[k][i])):
+                predValue = preds[k][i][j]
+                #calculate a lower bound on the squared error (zero if the prediction is within the inteveral)
+                if statIntervals[i][0] > predValue or predValue > statIntervals[i][1]:
+                    rmseTests[k][j][0] += min( (statIntervals[i][0]-predValue)**2,     (statIntervals[i][1]-predValue)**2 
+                #calculate an upper bound on the squared error
+                rmseTests[k][j][1] += max( (statIntervals[i][0]-predValue)**2, (statIntervals[i][1]-predValue)**2 )
+
+    for k in range(0,len(modelNames)):
+        for j in range(0,len(preds[k][0])):
+            for i in [0,1]:
+                rmseTests[k][j][i] = math.sqrt(rmseTests[k][j][i]/(len(sizes) - threshold))
+                #TODO: Come up with a way to pick the best model since we now have a lower bound and an upper bound on the RMSE.
