@@ -228,14 +228,14 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     
 
     #YP: Refactored code to only create bootstrap samples once to save time.
-    bStat = bootstrapHelper.doBootstrap(runtimes, numInsts, numBootstrapSamples, statistic,     perInstanceStatistic)
+    bStat = bootstrapHelper.doBootstrap(runtimes, numInsts, numBootstrapSamples, statistic, perInstanceStatistic)
 
 
     #   calculate confidence intervals of observed data
     (obsvLos, obsvUps) = bootstrapHelper.getBootstrapIntervals( bStat )
 
     #   fit models
-    modelFittingHelper.fitModels( algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes, stats, statIntervals, threshold, gnuplotPath, modelFileName)
+    (para, rmseTrains, rmseTests) = modelFittingHelper.fitModels( algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes, stats, statIntervals, threshold, gnuplotPath, modelFileName)
 
 
     #   calculate bootstrap intervals of fitted models
@@ -244,7 +244,15 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
 
     #YP: added a function call to check which model is considered the best
     #fit after the bootstrap sampling
-    bootstrapHelper.getBootstrapBestFit(preds, statIntervals, sizes, threshold, modelNames)
+    (rmseTestBounds, expectedTestRMSE) = bootstrapHelper.getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames)
+
+    #print(rmseTests)
+    #print(rmseTestBounds)
+    #YP: Now we create the fitted model tables.
+    modelFittingHelper.makeTableFittedModels(para, rmseTrains, rmseTestBounds, expectedTestRMSE, modelNumParas, modelReps, modelNames, threshold, algName, sizes)
+
+    #   fit models
+    modelFittingHelper.fitModels( algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes, stats, statIntervals, threshold, gnuplotPath, modelFileName)
 
     (paraLos, paraUps) = bootstrapHelper.getLoUps( modelNames, paras )
     csvHelper.genCSV( ".", "table_Bootstrap-intervals-of-parameters.csv", [ ("Confidence intervals of p%d" % i) for i in range(0, max(modelNumParas)) ], [ algName+" "+modelName+". model" for modelName in modelNames ], getIntervals(paraLos, paraUps))

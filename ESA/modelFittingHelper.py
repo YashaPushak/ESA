@@ -17,7 +17,7 @@ def fillModelRepsWValues( modelRep, valueTuple ):
         modelRep = modelRep[0:stIdx] + valueTuple[ord(id)-ord('a')] + modelRep[edIdx:]
     return modelRep
 
-def genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes, threshold, para, seTrains, seTests, texFileName="table_Fitted-models.tex"):
+def genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes, threshold, para, rmseTrains, rmseTests, expectedTestRMSE, texFileName="table_Fitted-models.tex"):
     res = ""
     res += "\\begin{tabular}{ccccc} \n"
     res += "\\hline \n"
@@ -28,22 +28,22 @@ def genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes
     for i in range(0, len(modelNames)):
         if i == 0:
             res += "\\multirow{%d}{*}{%s}" % (len(modelNames), latexHelper.escapeNonAlNumChars( algName ) )
-        if seTests[i][0] == min(seTests)[0]:
+        if expectedTestRMSE[i] == min(expectedTestRMSE):
             modelParasTuple = ()
             for k in range(0, modelNumParas[i]):
                 modelParasTuple += ( latexHelper.numToTex(para[i][k], 5), )
             res += latexHelper.prepareTableRow(" & %s. Model" % modelNames[i], \
                 [ latexHelper.bold( fillModelRepsWValues( modelReps[i], modelParasTuple ), True ), \
-                latexHelper.bold( latexHelper.numToTex(math.sqrt( seTrains[i]/threshold ), 5), True ), \
-                latexHelper.bold( latexHelper.numToTex(math.sqrt( seTests[i][0]/(len(sizes)-threshold)), 5), True ) if seTests[i][0]==seTests[i][1] else latexHelper.genInterval( latexHelper.numToTex(math.sqrt( seTests[i][0]/(len(sizes)-threshold)), 5), latexHelper.numToTex(math.sqrt( seTests[i][1]/(len(sizes)-threshold)), 5), 1) ] ) 
+                latexHelper.bold( latexHelper.numToTex(rmseTrains[i], 5), True ), \
+                latexHelper.bold( latexHelper.numToTex(rmseTests[i][0], 5), True ) if rmseTests[i][0]==rmseTests[i][1] else latexHelper.genInterval( latexHelper.numToTex(rmseTests[i][0], 5), latexHelper.numToTex(rmseTests[i][1], 5), 1) ] ) 
         else:
             modelParasTuple = ()
             for k in range(0, modelNumParas[i]):
                 modelParasTuple += ( latexHelper.numToTex(para[i][k], 5) ,)
             res += latexHelper.prepareTableRow(" & %s. Model" % modelNames[i], \
                 [ "$%s$" % fillModelRepsWValues( modelReps[i], modelParasTuple ), \
-                "$%s$" % latexHelper.numToTex( math.sqrt( seTrains[i]/threshold ), 5 ), \
-                "$%s$" % latexHelper.numToTex( math.sqrt( seTests[i][0]/(len(sizes)-threshold) ), 5 ) if seTests[i][0]==seTests[i][1] else latexHelper.genInterval( latexHelper.numToTex(math.sqrt( seTests[i][0]/(len(sizes)-threshold)), 5), latexHelper.numToTex(math.sqrt( seTests[i][1]/(len(sizes)-threshold)), 5) ) ] )
+                "$%s$" % latexHelper.numToTex( rmseTrains[i] , 5 ), \
+                "$%s$" % latexHelper.numToTex( rmseTests[i][0], 5 ) if rmseTests[i][0]==rmseTests[i][1] else latexHelper.genInterval( latexHelper.numToTex(rmseTests[i][0], 5), latexHelper.numToTex(rmseTests[i][1], 5) ) ] )
         #    " & $6.89157\\times10^{-4}\\text{\\ensuremath{\\times}}1.00798{}^{n}$  & 0.0008564  & 0.7600")
     res += "\\hline \n"
     res += "\end{tabular} \n"
@@ -92,15 +92,6 @@ def fitModels( algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes,
             if medianIntervals[i][0] > predValue or predValue > medianIntervals[i][1]:
                 seTests[k][0] += min( (medianIntervals[i][0]-predValue)**2, (medianIntervals[i][1]-predValue)**2 )
             seTests[k][1] += max( (medianIntervals[i][0]-predValue)**2, (medianIntervals[i][1]-predValue)**2 )
-        # if modelNames[k] == "Poly":
-        #     for i in range(0, threshold):
-        #         seTrains[k] += (po(para[k], sizes[i]) - medians[i])**2 
-        #     for i in range(threshold, len(sizes)):
-        #         seTests[k] = (po(para[k], sizes[i]) - medians[i])**2 
-    csvHelper.genCSV( ".", "table_Fitted-models.csv", ["Model", "RMSE (support)", "RMSE (challenge)"], \
-        [ algName+" "+modelName+". Model" for modelName in modelNames ], \
-        [ [ para[k], math.sqrt( seTrains[k]/threshold ), [math.sqrt( seTests[k][i]/(len(sizes)-threshold) ) for i in range(0,2)] ] for k in range(0, len(modelNames)) ] )
-    genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes, threshold, para, seTrains, seTests)
 
     with open("./residueTrainFile.txt", 'w') as gnuplotFile:
         for i in range(0, threshold):
@@ -115,3 +106,28 @@ def fitModels( algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes,
                 gnuplotFileLine += " %f" % (medians[i] - modelFuncs[k](para[k], sizes[i]))
             print >>gnuplotFile, gnuplotFileLine
     os.system( 'cat residueTrainFile.txt residueTestFile.txt >residueFile.txt' )
+
+    #Convert the squared errors to root mean squared errors.
+    for i in range(0,2):
+        seTrains[k] = math.sqrt( seTrains[k]/threshold )
+        for k in range(0,len(modelNames)):
+            seTests[k][i] = math.sqrt( seTests[k][i]/(len(sizes)-threshold))
+
+    #YP: The original function did not return these values, but instead
+    #calculated the table_Fitted-models.* files and the residue* files
+    #here. I am returning this instead, and creating this files in new
+    #functions so that I can replace some of the data with statistics
+    #from the bootstrap models.
+    return (para, seTrains, seTests)
+
+
+def makeTableFittedModels(para, rmseTrains, rmseTests, expectedTestRMSE, modelNumParas, modelReps, modelNames, threshold, algName, sizes):
+    #Author: Yasha Pushak
+    #Last updated: November 17th, 2016
+    #I pulled the original code for this out of the fitModels function
+    #and created a new one here. 
+    csvHelper.genCSV( ".", "table_Fitted-models.csv", ["Model", "RMSE (support)", "RMSE (challenge)", "Expected RMSE (challenge)"], \
+        [ algName+" "+modelName+". Model" for modelName in modelNames ], \
+        [ [ para[k], rmseTrains[k], rmseTests[k], expectedTestRMSE[k] ] for k in range(0, len(modelNames)) ] )
+    genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes, threshold, para, rmseTrains, rmseTests, expectedTestRMSE)
+

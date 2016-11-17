@@ -104,11 +104,10 @@ def getLoUps( modelNames, data, alpha=95 ):
     return (dataLos, dataUps)
 
 
-def getBootstrapBestFit(preds, statIntervals, sizes, threshold, modelNames):
+def getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
     #Author: Yasha Pushak
     #Last updated: November 16th, 2016
-    #Calculates the challenge RMSE for the bootstrap models (currently with
-    #the non-bootstrapped data and returns the model that best fit the data.
+    #Calculates bootstrap confidence intervals for the challenge RMSE.
 
     #Initialize the squared error for the test sizes to zero for all of the 
     #bootstrap models.
@@ -125,11 +124,11 @@ def getBootstrapBestFit(preds, statIntervals, sizes, threshold, modelNames):
             for j in range(0,len(preds[k][i])):
                 predValue = preds[k][i][j]
                 #calculate a lower bound on the squared error (zero if the prediction is within the inteveral)
-                if statIntervals[i][0] > predValue or predValue > statIntervals[i][1]:
+                if bStat[0][i][j] > predValue or predValue > bStat[1][i][j]:
                     #rmseTests[k][j][0] += (statIntervals[i][1]-predValue)**2 
-                    rmseTests[k][j][0] += min( (statIntervals[i][0]-predValue)**2, (statIntervals[i][1]-predValue)**2) 
+                    rmseTests[k][j][0] += min( (bStat[0][i][j]-predValue)**2, (bStat[1][i][j]-predValue)**2) 
                 #calculate an upper bound on the squared error
-                rmseTests[k][j][1] += max( (statIntervals[i][0]-predValue)**2, (statIntervals[i][1]-predValue)**2 )
+                rmseTests[k][j][1] += max( (bStat[0][i][j]-predValue)**2, (bStat[1][i][j]-predValue)**2 )
 
     #Divide and take the root to get the RMSE from the SEs.
     for k in range(0,len(modelNames)):
@@ -140,20 +139,30 @@ def getBootstrapBestFit(preds, statIntervals, sizes, threshold, modelNames):
     counts = [0]*len(modelNames)
     avgRMSE = [0]*len(modelNames)
     for j in range(0,len(preds[0][0])):
-        best = float('inf')
+        best = [float('inf')]*3
         argBest = []
         for k in range(0,len(modelNames)):
             #Get the expected value of the RMSE assuming a uniform
             #distribution over the bootstrap confidence interval
-            RMSE = sum(rmseTests[k][j])/2.0
-            avgRMSE[k] += RMSE
-            if(RMSE < best):
+            RMSE = [sum(rmseTests[k][j])/2.0, rmseTests[k][j][0], rmseTests[k][j][1]]
+            avgRMSE[k] += RMSE[0]
+            if(RMSE[0] < best[0]):
                 best = RMSE
                 argBest = [k]
-            elif(RMSE == best):
+            elif(best[0] == float('inf') and RMSE[0] == float('inf')):
+                if(RMSE[1] < best[1]):
+                    #If both of the upper bounds are inf, check which one has
+                    #a smaller lower bound, and use that to break ties.
+                    best = RMSE
+                    argBest = [k]
+                elif(RMSE[1] == best[1]):
+                    #Rather than breaking ties at random, add a vote for
+                    #both
+                    argBest.append(k)
+            elif(RMSE[0] == best[0]):
                 #Rather than breaking ties uniformly at random, we simply 
                 #add a vote for all tied models.
-                argbest.append(k)
+                argBest.append(k)
         for vote in argBest:
             counts[vote] += 1
     #Find which model had the most votes.
@@ -167,12 +176,50 @@ def getBootstrapBestFit(preds, statIntervals, sizes, threshold, modelNames):
             argBest = [k]
         elif(counts[k] == best):
             argBest.append(k)
-    
+     
     #break ties uniformly at random.
     winner = argBest[random.randrange(0,len(argBest))]
-    print('Model name, votes, average RMSE')
+    print('Model name, votes, average RMSE, RMSE bounds, Expected RMSE')
+
+    rmseTestBounds = [[-1,-1] for i in range(0,len(modelNames))]
+    expected = [-1]*len(modelNames)
     for k in range(0,len(counts)):
-        print(modelNames[k] + ', ' + str(counts[k]) + ', ' + str(avgRMSE[k]))
+        loRMSE = []
+        upRMSE = []
+        for j in range(0,len(rmseTests[k])):
+            loRMSE.append(rmseTests[k][j][0])
+            upRMSE.append(rmseTests[k][j][1])
+        rmseTestBounds[k][0] = summarizeRuntimes.calStatistic(loRMSE, 'Q' + str(50-alpha/2.0))
+        rmseTestBounds[k][1] = summarizeRuntimes.calStatistic(upRMSE, 'Q' + str(50+alpha/2.0))
+        expected[k] = sum(rmseTestBounds[k])/2
+        print(modelNames[k] + ', ' + str(counts[k]) + ', ' + str(avgRMSE[k]) + ', [' + str(rmseTestBounds[k][0]) + ', ' + str(rmseTestBounds[k][1]) + '], ' + str(expected[k]))
+        #print(rmseTestBounds)
+    #Get the winner using the minimum RMSE if possible
+    #if(min(avgRMSE) < float('inf')):
+    #    bestRMSE = float('inf')
+    #    winner = []
+    #    for k in range(0,len(counts)):
+    #        if(avgRMSE[k] < bestRMSE):
+    #            winner = [k]
+    #            bestRMSE = avgRMSE[k]
+    #        elif(avgRMSE[k] == bestRMSE):
+    #            winner.append(k)
+    #break ties uniformly at random.
+
+    #Get the winner using the expected RMSE if possible
+    if(min(expected) < float('inf')):
+        bestRMSE = float('inf')
+        winner = []
+        for k in range(0,len(counts)):
+            if(expected[k] < bestRMSE):
+                winner = [k]
+                bestRMSE = expected[k]
+            elif(expected[k] == bestRMSE):
+                winner.append(k)
+ 
+    #Break ties uniformly at random
+    winner = winner[random.randrange(0,len(winner))]
+
     print('The winner is: ' + modelNames[winner])
 
- 
+    return (rmseTestBounds, expected) 
