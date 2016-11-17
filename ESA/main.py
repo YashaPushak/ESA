@@ -228,6 +228,11 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
 
     #   calculate bootstrap intervals of fitted models
     (paras, preds) = bootstrapHelper.doBootstrapAnalysis( sizes, runtimes, numInsts, threshold, statistic, modelNames, modelNumParas, modelFuncs, numBootstrapSamples, gnuplotPath )
+
+    #YP: added a function call to check which model is considered the best
+    #fit after the bootstrap sampling
+    bootstrapHelper.getBootstrapBestFit(preds, statIntervals, sizes, threshold, modelNames)
+
     (paraLos, paraUps) = bootstrapHelper.getLoUps( modelNames, paras )
     csvHelper.genCSV( ".", "table_Bootstrap-intervals-of-parameters.csv", [ ("Confidence intervals of p%d" % i) for i in range(0, max(modelNumParas)) ], [ algName+" "+modelName+". model" for modelName in modelNames ], getIntervals(paraLos, paraUps))
     latexHelper.genTexTableBootstrapParas( algName, modelNames, modelNumParas, paraLos, paraUps )
