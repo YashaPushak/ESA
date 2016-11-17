@@ -4,7 +4,7 @@ import math
 import random
 import summarizeRuntimes
 
-def doBootstrap(data, numInsts, numSamples, statistic):
+def doBootstrap(data, numInsts, numSamples, statistic, perInstanceStatistic):
     bStat = [[],[]]
     for j in range(0, len(data)):
         bStat[0].append( [] )
@@ -17,21 +17,29 @@ def doBootstrap(data, numInsts, numSamples, statistic):
             for k in range(0, size):
                 p = random.randrange(0, size)
                 if p<len(data[j]):
-                    bTmpData.append( data[j][p] )
+                    #YP: Added additional bootstrap step here
+                    bTmpInstData = []
+                    for l in range(0,len(data[j][p])):
+                        q = random.randrange(0, len(data[j][p]))
+                        bTmpInstData.append(data[j][p][q])
+                    
+                    bTmpData.append( summarizeRuntimes.calStatistic( bTmpInstData, perInstanceStatistic) )
             bStat[0][j].append( summarizeRuntimes.calStatistic( bTmpData+[ 0 for i in range(0, size-len(bTmpData)) ], statistic ) )
             bStat[1][j].append( summarizeRuntimes.calStatistic( bTmpData+[ float('inf') for i in range(0, size-len(bTmpData)) ], statistic ) )
+        if(i%10 == 9):
+            print(str(i+1) + " bootstrap samples made...")
     return bStat
 
-def getBootstrapIntervals(data, numInsts, numSamples, statistic, alpha=95):
-    bStat = doBootstrap(data, numInsts, numSamples, statistic)
+def getBootstrapIntervals(bStat, alpha=95):
+    #bStat = doBootstrap(data, numInsts, numSamples, statistic, perInstanceStatistic)
     #los = [ numpy.percentile(d, 50-alpha/2.0) for d in bStat ]
     #ups = [ numpy.percentile(d, 50+alpha/2.0) for d in bStat ]
     los = [ summarizeRuntimes.calStatistic(d, "Q%f"%(50-alpha/2.0)) for d in bStat[0] ]
     ups = [ summarizeRuntimes.calStatistic(d, "Q%f"%(50+alpha/2.0)) for d in bStat[1] ]
     return (los, ups)
 
-def doBootstrapAnalysis(sizes, data, numInsts, threshold, statistic, modelNames, modelNumParas, modelFuncs, numSamples, gnuplotPath, alpha=95):
-    bStat = doBootstrap(data, numInsts, numSamples, statistic)[0]
+def doBootstrapAnalysis(bStat, sizes, data, threshold, statistic, modelNames, modelNumParas, modelFuncs, numSamples, gnuplotPath, alpha=95):
+    #bStat = doBootstrap(data, numInsts, numSamples, statistic, perInstanceStatistic)[0]
     print "bStat: %d x %d" % ( len(bStat), len(bStat[0]) )
 
     owd = os.getcwd()
@@ -53,7 +61,7 @@ def doBootstrapAnalysis(sizes, data, numInsts, threshold, statistic, modelNames,
                 if terms[0].split()[1].strip() == "fit":
                     print >>files[k], terms[1].strip()
         if i%10 == 9:
-            print "%d bootstrap done..." % (i+1)
+            print "%d models fitted to bootstrap samples..." % (i+1)
     for file in files:
         file.close()
 
