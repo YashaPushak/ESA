@@ -55,11 +55,16 @@ def doBootstrapAnalysis(bStat, sizes, data, threshold, statistic, modelNames, mo
         os.system(gnuplotPath + "gnuplot bootstrap-fit.plt >& /dev/null")
         
         with open("fit-models.log") as fitsFile:
+            #YP: added in counting stuff
+            count = 0 
             for line in fitsFile:
+                count += 1
                 terms = line.split(":")
                 k = modelNames.index(terms[0].split()[0].strip())
                 if terms[0].split()[1].strip() == "fit":
                     print >>files[k], terms[1].strip()
+            if(not count == len(modelNames)):
+                raise Exception('error.')
         if i%10 == 9:
             print "%d models fitted to bootstrap samples..." % (i+1)
     for file in files:
@@ -117,7 +122,8 @@ def getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
         rmseTests.append([])
         for j in range(0,len(preds[k][0])):
             rmseTests[k].append([0.0, 0.0])
-            
+
+    print(preds)            
 
     for k in range(0,len(modelNames)):
         for i in range(threshold, len(sizes)):
@@ -144,6 +150,10 @@ def getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
         for k in range(0,len(modelNames)):
             #Get the expected value of the RMSE assuming a uniform
             #distribution over the bootstrap confidence interval
+            #print(rmseTests)
+            #print(k)
+            #print(j)
+            #print(rmseTests[k][j])
             RMSE = [sum(rmseTests[k][j])/2.0, rmseTests[k][j][0], rmseTests[k][j][1]]
             avgRMSE[k] += RMSE[0]
             if(RMSE[0] < best[0]):
@@ -195,31 +205,31 @@ def getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
         print(modelNames[k] + ', ' + str(counts[k]) + ', ' + str(avgRMSE[k]) + ', [' + str(rmseTestBounds[k][0]) + ', ' + str(rmseTestBounds[k][1]) + '], ' + str(expected[k]))
         #print(rmseTestBounds)
     #Get the winner using the minimum RMSE if possible
-    #if(min(avgRMSE) < float('inf')):
-    #    bestRMSE = float('inf')
-    #    winner = []
-    #    for k in range(0,len(counts)):
-    #        if(avgRMSE[k] < bestRMSE):
-    #            winner = [k]
-    #            bestRMSE = avgRMSE[k]
-    #        elif(avgRMSE[k] == bestRMSE):
-    #            winner.append(k)
-    #break ties uniformly at random.
-
-    #Get the winner using the expected RMSE if possible
-    if(min(expected) < float('inf')):
+    if(min(avgRMSE) < float('inf')):
         bestRMSE = float('inf')
         winner = []
         for k in range(0,len(counts)):
-            if(expected[k] < bestRMSE):
+            if(avgRMSE[k] < bestRMSE):
                 winner = [k]
-                bestRMSE = expected[k]
-            elif(expected[k] == bestRMSE):
+                bestRMSE = avgRMSE[k]
+            elif(avgRMSE[k] == bestRMSE):
                 winner.append(k)
+    #break ties uniformly at random.
+
+    #Get the winner using the expected RMSE if possible
+    #if(min(expected) < float('inf')):
+    #    bestRMSE = float('inf')
+    #    winner = []
+    #    for k in range(0,len(counts)):
+    #        if(expected[k] < bestRMSE):
+    #            winner = [k]
+    #            bestRMSE = expected[k]
+    #        elif(expected[k] == bestRMSE):
+    #            winner.append(k)
  
     #Break ties uniformly at random
     winner = winner[random.randrange(0,len(winner))]
 
     print('The winner is: ' + modelNames[winner])
 
-    return (rmseTestBounds, expected) 
+    return (rmseTestBounds, avgRMSE) 

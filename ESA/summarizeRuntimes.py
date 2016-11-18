@@ -65,8 +65,10 @@ def getRuntimesFromFile(dirName, filename, numRunsPerInstance):
                     runtime = float(terms[i])
                 except:
                     runtime = float('inf')
-                if runtime < 0:
-                    runtime = float('inf')
+                #YP: Removed the following two lines so that I can try
+                #fitting to differences in running times
+                #if runtime < 0:
+                #    runtime = float('inf')
                 instRuntimes.append(runtime)
             if(numRunsPerInstance > 0 and not len(instRuntimes) == numRunsPerInstance):
                 numWarning += 1
