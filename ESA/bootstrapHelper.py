@@ -123,7 +123,7 @@ def getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
         for j in range(0,len(preds[k][0])):
             rmseTests[k].append([0.0, 0.0])
 
-    print(preds)            
+           
 
     for k in range(0,len(modelNames)):
         for i in range(threshold, len(sizes)):
@@ -144,6 +144,7 @@ def getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
     #Count how many times each model has the best expected RMSE
     counts = [0]*len(modelNames)
     avgRMSE = [0]*len(modelNames)
+    avgRMSEList = [[] for k in range(len(modelNames))]
     for j in range(0,len(preds[0][0])):
         best = [float('inf')]*3
         argBest = []
@@ -156,6 +157,7 @@ def getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
             #print(rmseTests[k][j])
             RMSE = [sum(rmseTests[k][j])/2.0, rmseTests[k][j][0], rmseTests[k][j][1]]
             avgRMSE[k] += RMSE[0]
+            avgRMSEList[k].append(RMSE[0])
             if(RMSE[0] < best[0]):
                 best = RMSE
                 argBest = [k]
@@ -178,9 +180,18 @@ def getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
     #Find which model had the most votes.
     best = -1
     argBest = []
+    stats = []
     for k in range(0,len(counts)):
         #Calculate the average RMSE.
         avgRMSE[k] = avgRMSE[k]/len(rmseTests[k])
+        #calculate some statistics of the average RMSEs.
+        stats.append([])
+        stats[k].append(summarizeRuntimes.calStatistic(avgRMSEList[k],'Q10'))
+        stats[k].append(summarizeRuntimes.calStatistic(avgRMSEList[k],'Q25'))
+        stats[k].append(summarizeRuntimes.calStatistic(avgRMSEList[k],'Q50'))
+        stats[k].append(summarizeRuntimes.calStatistic(avgRMSEList[k],'Q75'))
+        stats[k].append(summarizeRuntimes.calStatistic(avgRMSEList[k],'Q90'))
+        
         if(counts[k] > best):
             best = counts[k]
             argBest = [k]
@@ -202,17 +213,30 @@ def getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
         rmseTestBounds[k][0] = summarizeRuntimes.calStatistic(loRMSE, 'Q' + str(50-alpha/2.0))
         rmseTestBounds[k][1] = summarizeRuntimes.calStatistic(upRMSE, 'Q' + str(50+alpha/2.0))
         expected[k] = sum(rmseTestBounds[k])/2
-        print(modelNames[k] + ', ' + str(counts[k]) + ', ' + str(avgRMSE[k]) + ', [' + str(rmseTestBounds[k][0]) + ', ' + str(rmseTestBounds[k][1]) + '], ' + str(expected[k]))
-        #print(rmseTestBounds)
-    #Get the winner using the minimum RMSE if possible
-    if(min(avgRMSE) < float('inf')):
+        print(modelNames[k] + ', ' + str(counts[k]) + ', ' + \
+            str(avgRMSE[k]) + ', [' + str(rmseTestBounds[k][0]) + ', ' + \
+            str(rmseTestBounds[k][1]) + '], ' + str(expected[k]))
+        #print(rmseTestBounds)0
+    print('Model name, average RMSE [Q10, Q25, Q50, Q75, Q90]')
+    for k in range(0, len(counts)):
+        print(modelNames[k] + ', [' + \
+            str(stats[k][0]) + ', ' + str(stats[k][1]) + ', ' + \
+            str(stats[k][2]) + ', ' + str(stats[k][3]) + ', ' + \
+            str(stats[k][4]) + ']')
+    
+    medianMeanRMSE = []
+    for i in range(0,len(avgRMSE)):
+        medianMeanRMSE.append(stats[i][2])
+    
+    #Get the winner using the minimum median mean RMSE if possible
+    if(min(medianMeanRMSE) < float('inf')):
         bestRMSE = float('inf')
         winner = []
         for k in range(0,len(counts)):
-            if(avgRMSE[k] < bestRMSE):
+            if(medianMeanRMSE[k] < bestRMSE):
                 winner = [k]
-                bestRMSE = avgRMSE[k]
-            elif(avgRMSE[k] == bestRMSE):
+                bestRMSE = medianMeanRMSE[k]
+            elif(medianMeanRMSE[k] == bestRMSE):
                 winner.append(k)
     #break ties uniformly at random.
 
@@ -232,4 +256,4 @@ def getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
 
     print('The winner is: ' + modelNames[winner])
 
-    return (rmseTestBounds, avgRMSE) 
+    return (rmseTestBounds, medianMeanRMSE) 

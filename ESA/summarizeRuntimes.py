@@ -182,8 +182,8 @@ def summarizeRuntimes(sizes, runtimes, numInsts, algName, dirName, statistic, pe
     #YP: Calculate the per-instance statistics and use them in place of what used to be the running times.    
     runtimeStatistics = [ [calStatistic(runtimes[i][j], perInstanceStatistic) for j in range(0,len(runtimes[i]))] for i in range(0,len(sizes)) ]
 
-    with open('runtime-file.log','w') as f_out:
-        f_out.write('runtimeStatistics = ' + str(runtimeStatistics))
+    #with open('runtime-file.log','w') as f_out:
+    #    f_out.write('runtimeStatistics = ' + str(runtimeStatistics))
 
     counts = prepareRuntimesTexTables( sizes, runtimeStatistics, numInsts, threshold, dirName )
     

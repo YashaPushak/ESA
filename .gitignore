@@ -5,3 +5,5 @@ test/
 test-cp/
 scenarios/
 .*
+assess-ESA/
+assess-scenarios/
