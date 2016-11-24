@@ -61,24 +61,49 @@ def getModels( fileDir, fileName, toModifyModelDefaultParas, sizes, stats, thres
                 modelDefs.append( inputModelToInternal( terms[3].strip(), True ) )
                 modelGnuplotDefs.append( inputModelToInternal( terms[4].strip(), False ) )
                 modelParaDefaults.append( [] )
+                y1 = float(stats[threshold-1])
+                y0 = float(stats[threshold-2])
+                x1 = float(sizes[threshold-1])
+                x0 = float(sizes[threshold-2])
+                print(x1)
+                print(x0)
+                print(x1**(0.5))
                 if toModifyModelDefaultParas and modelNames[-1].lower() == "exp" or modelNames[-1].lower() == "exponential":
-                    b = ( stats[threshold]/stats[threshold-1] ) ** ( 1.0 / ( sizes[threshold]-sizes[threshold-1] ) )
-                    a = stats[threshold]/(b**sizes[threshold])
-                    b = 1+(b-1)/2
+                    #YP: My new way of pre-fitting:
+                    #which exactly fits the mdoel to the smallest and
+                    #largest support instance sizes.
+                    b = math.exp((math.log(y1) - math.log(y0))/(x1 - x0))
+                    a = math.exp(math.log(y0) - math.log(b)*x0)
+                    #YP: Zongxu's old way of pre-fitting:
+                    #b = ( stats[threshold]/stats[threshold-1] ) ** ( 1.0 / ( sizes[threshold]-sizes[threshold-1] ) )
+                    #a = stats[threshold]/(b**sizes[threshold])
+                    #b = 1+(b-1)/2
                     print "Replacing %s model parameters as (%f, %f)" % (modelNames[-1], a, b)
                     modelParaDefaults[-1].append( a )
                     modelParaDefaults[-1].append( b )
                 elif toModifyModelDefaultParas and modelNames[-1].lower() == "rootexp" or modelNames[-1].lower() == "root-exponential":
-                    b = ( stats[threshold]/stats[threshold-1] ) ** ( 1.0 / ( math.sqrt(sizes[threshold])-math.sqrt(sizes[threshold-1]) ) )
-                    a = stats[threshold] / (b**math.sqrt(sizes[threshold]))
-                    b = 1+(b-1)/2
+                    #YP: My new way of pre-fitting the parameters:
+                    #which exactly fits the model to the smallest and
+                    #largest support instance sizes.
+                    b = math.exp((math.log(y1) - math.log(y0))/(x1**(0.5) - x0**(0.5)))
+                    a = math.exp(math.log(y0) - math.log(b)*(x0**(0.5)))
+                    #YP: Zongxu's old method for pre-fitting:
+                    #b = ( stats[threshold]/stats[threshold-1] ) ** ( 1.0 / ( math.sqrt(sizes[threshold])-math.sqrt(sizes[threshold-1]) ) )
+                    #a = stats[threshold] / (b**math.sqrt(sizes[threshold]))
+                    #b = 1+(b-1)/2
                     print "Replacing %s model parameters as (%f, %f)" % (modelNames[-1], a, b)
                     modelParaDefaults[-1].append( a )
                     modelParaDefaults[-1].append( b )
                 elif toModifyModelDefaultParas and modelNames[-1].lower() == "poly" or modelNames[-1].lower() == "polynomial":
-                    b = ( math.log(stats[threshold]) - math.log(stats[threshold-1]) ) / ( math.log(sizes[threshold]) - math.log(sizes[threshold-1]) )
-                    a = stats[threshold] / (sizes[threshold] ** b)
-                    b = min(1, b/2)
+                    #YP: My new way of pre-fitting the parameters:
+                    #which exactly fits the model to the smallest and
+                    #largest support instance sizes.
+                    b = (math.log(y1) - math.log(y0))/(math.log(x1) - math.log(x0))
+                    a = math.exp(math.log(y0) - b*math.log(x0))
+                    #YP: Zongxu's old way of pre-fitting the parameters:
+                    #b = ( math.log(stats[threshold]) - math.log(stats[threshold-1]) ) / ( math.log(sizes[threshold]) - math.log(sizes[threshold-1]) )
+                    #a = stats[threshold] / (sizes[threshold] ** b)
+                    #b = min(1, b/2)
                     print "Replacing %s model parameters as (%f, %f)" % (modelNames[-1], a, b)
                     modelParaDefaults[-1].append( a )
                     modelParaDefaults[-1].append( b )
@@ -197,6 +222,9 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
                     #YP: Added perInstanceStatistic to configuration file
                     if terms[0].strip() == "perInstanceStatistic":
                         perInstanceStatistic = terms[1].strip()
+                    #YP: Added modifyDefaultParameters to configuration file
+                    if terms[0].strip() == "modifyDefaultParameters":
+                        toModifyModelDefaultParas = (terms[1].strip() == "True")
 
     #   prepare template files
     if not os.path.exists( fileDir+"/"+modelFileName ):
