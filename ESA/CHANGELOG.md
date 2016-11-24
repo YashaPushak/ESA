@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 ## [Unreleased]
 
 ### Added
+ - Exposed a new parameter to the configuration file 'modifyDefaultParameters' which can be either True or False. If True, then the default fitting parameters (in models.txt) are ignored, and instead replaced by fitting the models to the largest and smallest support instance sizes. This parameter only affects polynomial, exponential, and root-exponential models.
  - Nested bootstrapping can be performed to calculate per-instance statistics for randomized algorithms with multiple independent runs on each instance.
  - More information printed to console to show when bootstrap samples have been made and when models have been fit to them.
  - Challenge RMSE is now reported with a bootstrap confidence interval across the bootstrap samples. The model with the best expected RMSE is selected as the best fit model. 
