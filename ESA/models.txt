@@ -1,4 +1,3 @@
 EXP,2,@@a@@\times @@b@@^{x}, @@a@@*@@b@@**x, @@a@@*@@b@@**x, 1e-4,1.01
 Poly,2,@@a@@\times x^{@@b@@},@@a@@*x**@@b@@,@@a@@*x**@@b@@,1e-8,1
-#Poly initializations work at 1e-7,10
-SQRTEXP,2,@@a@@\times @@b@@^{\sqrt{x}},@@a@@*@@b@@**(x**(0.5)),@@a@@*@@b@@**(x**(0.5)),1e-4,1.01
+ROOTEXP,2,@@a@@\times @@b@@^{\sqrt{x}},@@a@@*@@b@@**(x**(0.5)),@@a@@*@@b@@**(x**(0.5)),1e-4,1.01

@@ -3,6 +3,7 @@ import numpy
 import math
 import random
 import summarizeRuntimes
+import csvHelper
 
 def doBootstrap(data, numInsts, numSamples, statistic, perInstanceStatistic):
     bStat = [[],[]]
@@ -200,7 +201,12 @@ def getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
      
     #break ties uniformly at random.
     winner = argBest[random.randrange(0,len(argBest))]
-    print('Model name, votes, average RMSE, RMSE bounds, Expected RMSE')
+    print('Model Names, votes, average RMSE, RMSE bounds, Expected RMSE')
+    headers = ['votes', 'average RMSE', 'RMSE bounds', 'Expected RMSE', 'average RMSE [Q10, Q25, Q50, Q75, Q90]']
+
+    allStats = []
+    for i in range(0,len(modelNames)):
+        allStats.append([])
 
     rmseTestBounds = [[-1,-1] for i in range(0,len(modelNames))]
     expected = [-1]*len(modelNames)
@@ -213,9 +219,23 @@ def getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
         rmseTestBounds[k][0] = summarizeRuntimes.calStatistic(loRMSE, 'Q' + str(50-alpha/2.0))
         rmseTestBounds[k][1] = summarizeRuntimes.calStatistic(upRMSE, 'Q' + str(50+alpha/2.0))
         expected[k] = sum(rmseTestBounds[k])/2
+
         print(modelNames[k] + ', ' + str(counts[k]) + ', ' + \
             str(avgRMSE[k]) + ', [' + str(rmseTestBounds[k][0]) + ', ' + \
             str(rmseTestBounds[k][1]) + '], ' + str(expected[k]))
+
+        allStats[k].append(counts[k])
+        allStats[k].append(avgRMSE[k])
+        allStats[k].append('[' + str(rmseTestBounds[k][0]))
+        allStats[k].append(str(rmseTestBounds[k][1]) + ']')
+        allStats[k].append(expected[k])
+        allStats[k].append('[' + str(stats[k][0]))
+        allStats[k].append(stats[k][1])
+        allStats[k].append(stats[k][2])
+        allStats[k].append(stats[k][3])
+        allStats[k].append(str(stats[k][4]) + ']')
+
+
         #print(rmseTestBounds)0
     print('Model name, average RMSE [Q10, Q25, Q50, Q75, Q90]')
     for k in range(0, len(counts)):
@@ -223,7 +243,11 @@ def getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
             str(stats[k][0]) + ', ' + str(stats[k][1]) + ', ' + \
             str(stats[k][2]) + ', ' + str(stats[k][3]) + ', ' + \
             str(stats[k][4]) + ']')
-    
+   
+    csvHelper.genCSV(".","table_Challenge-RMSE.csv", headers, modelNames, allStats)
+
+
+ 
     medianMeanRMSE = []
     for i in range(0,len(avgRMSE)):
         medianMeanRMSE.append(stats[i][2])
@@ -238,6 +262,7 @@ def getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
                 bestRMSE = medianMeanRMSE[k]
             elif(medianMeanRMSE[k] == bestRMSE):
                 winner.append(k)
+    
     #break ties uniformly at random.
 
     #Get the winner using the expected RMSE if possible
@@ -253,6 +278,11 @@ def getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
  
     #Break ties uniformly at random
     winner = winner[random.randrange(0,len(winner))]
+    
+    #print(['Winner stats:'] + modelNames)
+    #print([modelNames[winner]] + medianMeanRMSE)
+    csvHelper.genCSV('.',"table_winners.csv", ['Winner stats:'] + modelNames ,['Winner'],[[modelNames[winner]] + medianMeanRMSE])
+    #print([modelNames[winner]] + medianMeanRMSE)
 
     print('The winner is: ' + modelNames[winner])
 

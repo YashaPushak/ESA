@@ -65,9 +65,9 @@ def getModels( fileDir, fileName, toModifyModelDefaultParas, sizes, stats, thres
                 y0 = float(stats[0])
                 x1 = float(sizes[threshold-1])
                 x0 = float(sizes[0])
-                print(x1)
-                print(x0)
-                print(x1**(0.5))
+                #print(x1)
+                #print(x0)
+                #print(x1**(0.5))
                 if toModifyModelDefaultParas and modelNames[-1].lower() == "exp" or modelNames[-1].lower() == "exponential":
                     #YP: My new way of pre-fitting:
                     #which exactly fits the mdoel to the smallest and
