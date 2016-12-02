@@ -184,6 +184,91 @@ def evaluateModels( modelNames, threshold, statIntervals, predLos, predUps ):
             res += "the %s model tends to fit the data" % modelNames[k]
     return res
 
+
+def evaluateModelsBootstrap( modelNames, threshold, statIntervals, bData, obsvLos, obsvUps, preds, predLos, predUps ):
+    #Author: Yasha Pushak
+    #last updated: December 1st, 2016
+    #I am creating a new version of the above function that uses the bootstrap values of the desired statistics, not just the observed ones. 
+    
+    res = ""
+    largerHalfIdx = (len(statIntervals)+threshold)/2
+    for k in range(0, len(modelNames)):
+        if k > 0:
+            res += ", "
+        if k == len(modelNames)-1:
+            res += "and "
+        
+        (perAboveIntervals, perAboveIntervalsLarger, perWithinIntervals, perWithinIntervalsLarger, perBelowIntervals, perBelowIntervalsLarger) = calWithinIntervals(bData, predLos, predUps, threshold, largerHalfIdx,k)
+
+        #YP: Removed some old debugging messages
+        print perAboveIntervals
+        print perAboveIntervalsLarger
+        print perBelowIntervals
+        print perBelowIntervalsLarger
+        print perWithinIntervals
+        print perWithinIntervalsLarger
+        if perWithinIntervals <= 0.70 or perWithinIntervalsLarger <= 0.70:
+            if perBelowIntervals > 0.75 or perBelowIntervalsLarger > 0.75:
+                res += "the %s model over-estimates the data" % modelNames[k]
+            elif perAboveIntervals > 0.75 or perAboveIntervalsLarger > 0.75:
+                res += "the %s model under-estimates the data" % modelNames[k]
+            elif (perBelowIntervals > 0.3 and perAboveIntervals < 0.05) or \
+                    (perBelowIntervalsLarger > 0.3 and perAboveIntervalsLarger < 0.05):
+                res += "the %s model tends to over-estimate the data" % modelNames[k]
+            elif (perAboveIntervals > 0.3 and perBelowIntervals < 0.05) or \
+                    (perAboveIntervalsLarger > 0.3 and perBelowIntervalsLarger < 0.05):
+                res += "the %s model tends to under-estimate the data" % modelNames[k]
+            else:
+                res += "the %s model does not fit the data well" % modelNames[k]
+        elif perWithinIntervals > 0.95:
+            res += "the %s model fits the data very well" % modelNames[k]
+        else:
+            res += "the %s model tends to fit the data" % modelNames[k]
+    return res
+
+
+def calWithinIntervals(data,los,ups,threshold,largerHalfIdx,k):
+    #Author: Yasha Pushak
+    #Last updated: December 1st, 2016
+    #Calculates the number of data poitns about, below, and within the specified intervals for each instance size.
+
+    numOverIntervals = 0
+    numOverIntervalsLarger = 0
+    numBelowIntervals = 0
+    numBelowIntervalsLarger = 0
+    numWithinIntervals = 0
+    numWithinIntervalsLarger = 0
+    numData = 0
+    numDataLargerHalf = 0
+    for s in range(threshold, len(data[0])):
+        for b in range(0,len(data[0][s])):
+            numData += 1
+            if s>= largerHalfIdx:
+                numDataLargerHalf += 1
+            if data[1][s][b]<los[k][s]:
+                numBelowIntervals += 1
+                if s>=largerHalfIdx:
+                    numBelowIntervalsLarger += 1
+            elif data[0][s][b]>ups[k][s]:
+                numOverIntervals += 1
+                if s>=largerHalfIdx:
+                    numOverIntervalsLarger += 1
+            else:
+                numWithinIntervals += 1
+                if s>=largerHalfIdx:
+                    numWithinIntervalsLarger += 1
+    #numData = (len(data[0]) - threshold)*len(data[0][0])
+    #numDataLargerHalf = (len(data[0]) - largerHalfIdx)*len(data[0][0])
+    perAboveIntervals = 1.0*numOverIntervals/numData
+    perAboveIntervalsLarger = 1.0*numOverIntervalsLarger/numDataLargerHalf
+    perBelowIntervals = 1.0*numBelowIntervals/numData
+    perBelowIntervalsLarger = 1.0*numBelowIntervalsLarger/numDataLargerHalf
+    perWithinIntervals = 1.0*numWithinIntervals/numData
+    perWithinIntervalsLarger = 1.0*numWithinIntervalsLarger/numDataLargerHalf
+    
+    return (perAboveIntervals, perAboveIntervalsLarger, perWithinIntervals, perWithinIntervalsLarger, perBelowIntervals, perBelowIntervalsLarger)
+
+
 def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the problem instances", modelFileName="models.txt", threshold=0, alpha=95, numBootstrapSamples=100, statistic="median", toModifyModelDefaultParas=False, tableDetailsSupportFileName="table_Details-dataset-support", tableDetailsChallengeFileName="table_Details-dataset-challenge", tableFittedModelsFileName="table_Fitted-models", tableBootstrapIntervalsParaFileName="table_Bootstrap-intervals-of-parameters", tableBootstrapIntervalsSupportFileName="table_Bootstrap-intervals_support", tableBootstrapIntervalsChallengeFileName="table_Bootstrap-intervals_challenge", figureCdfsFileName="cdfs", figureFittedModelsFileName="fittedModels", figureFittedResiduesFileName="fittedResidues", latexTemplate = "template-AutoScaling.tex", modelPlotTemplate = "template_plotModels.plt", residuePlotTemplate = "template_plotResidues.plt", gnuplotPath = '', numRunsPerInstance = 0, perInstanceStatistic="median"):
     #   get parameter values
     if os.path.exists( fileDir+"/configurations.txt" ):
@@ -309,7 +394,7 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
                 os.system('rm -f ' + logFile + '.log')
 
     #   generate files
-    latexHelper.genTexFile( fileDir, algName, instName, sizes, counts, numInsts, threshold, modelNames, modelOriReps, modelNumParas, numBootstrapSamples, statistic, tableDetailsSupportFileName, tableDetailsChallengeFileName, tableFittedModelsFileName, tableBootstrapIntervalsParaFileName, tableBootstrapIntervalsSupportFileName, tableBootstrapIntervalsChallengeFileName, figureCdfsFileName, figureFittedModelsFileName, figureFittedResiduesFileName, evaluateModels( modelNames, threshold, statIntervals, predLos, predUps ), latexTemplate )
+    latexHelper.genTexFile( fileDir, algName, instName, sizes, counts, numInsts, threshold, modelNames, modelOriReps, modelNumParas, numBootstrapSamples, statistic, tableDetailsSupportFileName, tableDetailsChallengeFileName, tableFittedModelsFileName, tableBootstrapIntervalsParaFileName, tableBootstrapIntervalsSupportFileName, tableBootstrapIntervalsChallengeFileName, figureCdfsFileName, figureFittedModelsFileName, figureFittedResiduesFileName, evaluateModelsBootstrap( modelNames, threshold, statIntervals, bStat, obsvLos, obsvUps, preds, predLos, predUps ), latexTemplate )
     os.system( "pdflatex 'scaling_%s.tex' >& /dev/null < pdflatex_input.txt" % latexHelper.removeSubstrs( algName, '/' ) )
     os.system( "bibtex 'scaling_%s' >& /dev/null < pdflatex_input.txt" %       latexHelper.removeSubstrs( algName, '/' ) )
     os.system( "pdflatex 'scaling_%s.tex' >& /dev/null < pdflatex_input.txt" % latexHelper.removeSubstrs( algName, '/' ) )
