@@ -81,7 +81,7 @@ def getModels( fileDir, fileName, toModifyModelDefaultParas, sizes, stats, thres
                     print "Replacing %s model parameters as (%f, %f)" % (modelNames[-1], a, b)
                     modelParaDefaults[-1].append( a )
                     modelParaDefaults[-1].append( b )
-                elif toModifyModelDefaultParas and modelNames[-1].lower() == "rootexp" or modelNames[-1].lower() == "root-exponential":
+                elif toModifyModelDefaultParas and modelNames[-1].lower() == "rootexp" or modelNames[-1].lower() == "root-exponential" or modelNames[-1].lower == "sqrtexp":
                     #YP: My new way of pre-fitting the parameters:
                     #which exactly fits the model to the smallest and
                     #largest support instance sizes.

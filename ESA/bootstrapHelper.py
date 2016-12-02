@@ -65,7 +65,7 @@ def doBootstrapAnalysis(bStat, sizes, data, threshold, statistic, modelNames, mo
                 if terms[0].split()[1].strip() == "fit":
                     print >>files[k], terms[1].strip()
             if(not count == len(modelNames)):
-                raise Exception('error.')
+                raise Exception('Error, gnuplot failed to fit all of the models')
         if i%10 == 9:
             print "%d models fitted to bootstrap samples..." % (i+1)
     for file in files:
