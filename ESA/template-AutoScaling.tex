@@ -1,6 +1,6 @@
 %% template-AutoScaling.tex
-%% Author: Zongxu Mu
-%% This is the LaTeX template file for Empirical Scaling Analyser (ESA).
+%% Author: Zongxu Mu, Yasha Pushak
+%% This is the LaTeX template file for Empirical Scaling Analyser (ESA) v1.1.
 %% ESA takes the template, replace variables with their corresponding values,
 %%	and generates an output file named AutoScaling.tex.
 %% You may compile this file alone without running ESA to see how the output looks like.
@@ -32,7 +32,10 @@
 \usepackage{graphicx}
 \usepackage{color}
 
+\newcommand{\yp}[1]{\textcolor{red}{#1}}
+
 \newcommand{\medianInterval}[1]{}
+\newcommand{\randomizedAlgorithm}[1]{}
 @@customCommands@@
 
 \makeatletter
@@ -79,6 +82,9 @@ non-linear least-squares Levenberg-Marquardt algorithm.
 Models were fitted to performance observations in the form of @@statistic@@s
 of the distributions of running times over sets of instances for given
 $n$, the instance size.
+\randomizedAlgorithm{
+Since @@algName@@ is a randomized algorithm, we analyzed the per-instance @@perInstanceStatistic@@ of @@numRunsPerInstance@@ independent runs for each instance. This means that models were fitted to @@statistic@@s of per-instance @@perInstanceStatistic@@s. Similarly, the running time statistics reported throughout this report are statistics of per-instance @@perInstanceStatistic@@s. 
+}
 %Compared to the mean, the median has two
 %advantages: it is statistically more stable and immune to the presence
 %of a certain amount of timed-out runs.
@@ -106,6 +112,7 @@ computed 95\% bootstrap confidence intervals for the performance predictions
 obtained from our scaling models, based on @@numBootstrapSamples@@ bootstrap samples
 per instance set and @@numBootstrapSamples@@ automatically fitted variants of each scaling
 model. 
+\randomizedAlgorithm{Since the analysis was performed on per-instance @@perInstanceStatistic@@s, we also computed these statistics on nested, per-instance bootstrap samples, by first computing @@perInstanceStatistic@@s for @@numPerInstanceBootstrapSamples@@ bootstrap samples for each instance and then randomly selecting one of the per-instance @@perInstanceStatistic@@s when needed.}
 In the following, we say that a scaling model is in-
 consistent with observed data if the bootstrap confidence interval for the observed data
 is disjoint from the bootstrap confidence interval for
@@ -124,7 +131,7 @@ point estimate less the predicated value.
 \section{Dataset Description}
 
 The dataset contains running times of the @@algName@@ algorithm solving
-@@numSizes@@ sets of instances of different sizes. We split the running times into
+@@numSizes@@ sets of instances of different sizes \randomizedAlgorithm{with @@numRunsPerInstance@@ independent runs per instance}. We split the running times into
 two categories, support ($n\leq@@largestSupportSize@@$) and challenge ($n>@@largestSupportSize@@$). The
 details of the dataset can be found in Tables \ref{tab:Details-dataset-support} 
 and \ref{tab:Details-dataset-challenge}.
@@ -133,7 +140,7 @@ and \ref{tab:Details-dataset-challenge}.
 @@table-Details-dataset-support@@
 \par\end{centering}
 
-\caption{\label{tab:Details-dataset-support} Details of the running time dataset used as support data for model fitting.}
+\caption{\label{tab:Details-dataset-support} Details of the running time dataset used as support data for model fitting. \randomizedAlgorithm{The statistics reported are statistics of the per-instance @@perInstanceStatistic@@ running times.}}
 \end{table*}
 
 \begin{table*}
@@ -141,7 +148,7 @@ and \ref{tab:Details-dataset-challenge}.
 @@table-Details-dataset-challenge@@
 \par\end{centering}
 
-\caption{\label{tab:Details-dataset-challenge} Details of the running time dataset used as challenge data for model fitting.}
+\caption{\label{tab:Details-dataset-challenge} Details of the running time dataset used as challenge data for model fitting. \randomizedAlgorithm{The statistics reported are statistics of the per-instance @@perInstanceStatistic@@ running times.}}
 \end{table*}
 
 % 
@@ -163,10 +170,10 @@ and \ref{tab:Details-dataset-challenge}.
 
 \label{sec:Results}
 
-We first fitted our parametric scaling models to the @@statistic@@s of the running times
+We first fitted our parametric scaling models to the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times
 of @@algName@@, as described in Section \ref{sec:Methodology}. The
-models were fitted using the @@statistic@@s of the running times for $@@supportSizes@@$
-(support) and later challenged with the @@statistic@@s of the running times for $@@challengeSizes@@$.
+models were fitted using the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times for $@@supportSizes@@$
+(support) and later challenged with the @@statistic@@s of the \ramdomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times for $@@challengeSizes@@$.
 This resulted in the models, shown along with RMSEs on support and
 challenge data, shown in Table~\ref{tab:Fitted-models}.
 \begin{table}[tb]
@@ -175,7 +182,7 @@ challenge data, shown in Table~\ref{tab:Fitted-models}.
 % \input{table_Fitted-models}
 \par\end{centering}
 
-\caption{\label{tab:Fitted-models}Fitted models of the @@statistic@@s of the running times and RMSE
+\caption{\label{tab:Fitted-models}Fitted models of the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times and RMSE
 values (in CPU sec). The models yielding more
 accurate predictions (as per RMSEs on challenge data) are shown in
 boldface.}
@@ -188,10 +195,10 @@ and the residues for the models in Figure~\ref{fig:Fitted-residues}.
 % \includegraphics[width=0.8\textwidth]{fittedModels}
 \par\end{centering}
 
-\caption{\label{fig:Fitted-models} Fitted models of the @@statistic@@s of the running times. 
-The models are fitted with the @@statistic@@s of the running times of
+\caption{\label{fig:Fitted-models} Fitted models of the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times. 
+The models are fitted with the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times of
 @@algName@@ solving the set of @@instName@@ 
-of $@@supportSizes@@$ variables, and are challenged by the @@statistic@@s of the
+of $@@supportSizes@@$ variables, and are challenged by the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@}
 running times of $@@challengeSizes@@$ variables.}
 \end{figure}
 
@@ -202,8 +209,7 @@ running times of $@@challengeSizes@@$ variables.}
 % \includegraphics[width=0.8\textwidth]{fittedResidues}
 \par\end{centering}
 
-\caption{\label{fig:Fitted-residues} Residues of the fitted models of the @@statistic@@s 
-of the running times. }
+\caption{\label{fig:Fitted-residues} Residues of the fitted models of the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times. }
 \end{figure}
 
 
@@ -225,7 +231,7 @@ Table~\ref{tab:Bootstrap-intervals-challenge}, it is concluded that
 
 \par\end{centering}
 \caption{\label{tab:Bootstrap-intervals-of-parameters} 95\% bootstrap intervals
-of model parameters for the @@statistic@@s of the running times}
+of model parameters for the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times}
 \end{table*}
 \begin{table*}[tb]
 \noindent \begin{centering}
@@ -234,7 +240,7 @@ of model parameters for the @@statistic@@s of the running times}
 \par\end{centering}
 
 \caption{\label{tab:Bootstrap-intervals-support} 95\% bootstrap confidence intervals
-for the @@statistic@@s of the running time predictions and observed running times on @@instName@@. 
+for the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running time predictions and observed running times on @@instName@@. 
 The instance sizes shown here are those used for fitting the models.
 Bootstrap intervals on predictions that are weakly consistent
 with the observed point estimates are shown in boldface, 
@@ -250,7 +256,7 @@ observations are marked by asterisks ({*}).}
 \par\end{centering}
 
 \caption{\label{tab:Bootstrap-intervals-challenge} 95\% bootstrap confidence intervals
-for the @@statistic@@s of the running time predictions and observed running times on @@instName@@. 
+for the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running time predictions and observed running times on @@instName@@. 
 The instance sizes shown here are larger than those used for fitting the models.
 Bootstrap intervals on predictions that are weakly consistent
 with the observed data are shown in boldface,

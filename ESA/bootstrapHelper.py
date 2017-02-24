@@ -5,11 +5,35 @@ import random
 import summarizeRuntimes
 import csvHelper
 
-def doBootstrap(data, numInsts, numSamples, statistic, perInstanceStatistic):
+def doBootstrap(data, numInsts, numSamples, statistic, perInstanceStatistic, numSamplesPerInstance):
+    #Author: Zongxu Mu, Yasha Pushak
+    #Last updated: February 7th, 2017
+    #For the bootstrap samples of statistics of nested bootstrap samples
     bStat = [[],[]]
+    #For the per-instance statistics of bootstrap samples for each instance
+    bData = []
     for j in range(0, len(data)):
         bStat[0].append( [] )
         bStat[1].append( [] )
+
+    if(len(data[0][0]) > 1):
+        #Generate the inner bootstrap samples
+        for size in range(0, len(data)):
+            bData.append([])
+            for inst in range(0, len(data[size])):
+                bData[size].append([])
+                for b in range(0,numSamplesPerInstance):
+                    bTmpInstData = []
+                    for i in range(0,len(data[size][inst])):
+                        p = random.randrange(0,len(data[size][inst]))
+                        bTmpInstData.append(data[size][inst][p])
+                    bData[size][inst].append(summarizeRuntimes.calStatistic( bTmpInstData, perInstanceStatistic))
+            print('Nested bootstrap samples for ' + str(size+1) + ' instance sizes made...')
+    else:
+        #bootstrap samples will all be degenerate here, so there's no use
+        #in making any.
+        bData = data
+
 
     for i in range(0, numSamples):
         for j in range(0, len(data)):
@@ -18,13 +42,10 @@ def doBootstrap(data, numInsts, numSamples, statistic, perInstanceStatistic):
             for k in range(0, size):
                 p = random.randrange(0, size)
                 if p<len(data[j]):
-                    #YP: Added additional bootstrap step here
-                    bTmpInstData = []
-                    for l in range(0,len(data[j][p])):
-                        q = random.randrange(0, len(data[j][p]))
-                        bTmpInstData.append(data[j][p][q])
-                    
-                    bTmpData.append( summarizeRuntimes.calStatistic( bTmpInstData, perInstanceStatistic) )
+                    #YP: Select one of the nested bootstrap sample statistics.
+                    q = random.randrange(0,len(bData[j][p]))
+                    bTmpData.append( bData[j][p][q] )
+
             bStat[0][j].append( summarizeRuntimes.calStatistic( bTmpData+[ 0 for i in range(0, size-len(bTmpData)) ], statistic ) )
             bStat[1][j].append( summarizeRuntimes.calStatistic( bTmpData+[ float('inf') for i in range(0, size-len(bTmpData)) ], statistic ) )
         if(i%10 == 9):

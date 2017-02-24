@@ -143,7 +143,9 @@ def escapeNonAlNumChars( instr ):
             res += char
     return res
 
-def genTexFile(fileDir, algName, instName, sizes, counts, numInsts, threshold, modelNames, modelReps, modelNumParas, numBootstrapSamples, statistic, tableDetailsSupportFileName, tableDetailsChallengeFileName, tableFittedModelsFileName, tableBootstrapIntervalsParaFileName, tableBootstrapIntervalsSupportFileName, tableBootstrapIntervalsChallengeFileName, figureCdfsFileName, figureFittedModelsFileName, figureFittedResiduesFileName, analysisSummary, latexTemplate):
+def genTexFile(fileDir, algName, instName, sizes, counts, numInsts, threshold, modelNames, modelReps, modelNumParas, numBootstrapSamples, statistic, numRunsPerInstance, perInstanceStatistic, numPerInstanceBootstrapSamples, tableDetailsSupportFileName, tableDetailsChallengeFileName, tableFittedModelsFileName, tableBootstrapIntervalsParaFileName, tableBootstrapIntervalsSupportFileName, tableBootstrapIntervalsChallengeFileName, figureCdfsFileName, figureFittedModelsFileName, figureFittedResiduesFileName, analysisSummary, latexTemplate):
+    #Author: Zongxu Mu, Yasha Pushak
+    #Last modified: February 7th, 2017
     modelsStr = "\\begin{itemize} \n"
     for i in range(0, len(modelNames)):
         modelsStr += "\\item $%s\\left[%s\\right]\\left(n\\right)=%s$ \quad{}(%d-parameter %s)" % (escapeNonAlNumChars(modelNames[i]), genParaStr(modelNumParas[i]), removeSubstrs(modelReps[i], '@@'), modelNumParas[i], modelNames[i])
@@ -154,8 +156,12 @@ def genTexFile(fileDir, algName, instName, sizes, counts, numInsts, threshold, m
         if counts[i]<numInsts[i]:
             customCommands += '\\renewcommand{\\medianInterval}[1]{#1} \n'
             break
+    #YP: Added a new command.
+    if(not numRunsPerInstance == 1):
+        customCommands += '\\renewcommand{\\randomizedAlgorithm}[1]{\yp{#1}} \n'
 
-    contents = {"customCommands":customCommands, "algName":escapeNonAlNumChars(algName), "instName":escapeNonAlNumChars(instName), "models":modelsStr, "numSizes":len(sizes), "largestSupportSize":sizes[threshold-1], "numBootstrapSamples":"%d" % numBootstrapSamples, "statistic":statistic, "table-Details-dataset-support":"\\input{%s}" % tableDetailsSupportFileName, "table-Details-dataset-challenge":"\\input{%s}" % tableDetailsChallengeFileName, "table-Fitted-models":"\\input{%s}" % tableFittedModelsFileName, "table-Bootstrap-intervals-of-parameters":"\\input{%s}" % tableBootstrapIntervalsParaFileName, "table-Bootstrap-intervals-support":"\\input{%s}" % tableBootstrapIntervalsSupportFileName, "table-Bootstrap-intervals-challenge":"\\input{%s}" % tableBootstrapIntervalsChallengeFileName, "figure-cdfs":"\\includegraphics[width=0.8\\textwidth]{%s}" % figureCdfsFileName, "figure-fittedModels":"\\includegraphics[width=0.8\\textwidth]{%s}" % (figureFittedModelsFileName), "figure-fittedResidues":"\\includegraphics[width=0.8\\textwidth]{%s}" % (figureFittedResiduesFileName), "supportSizes":getSizesStr(sizes, 0, threshold), "challengeSizes":getSizesStr(sizes, threshold, len(sizes)), "analysisSummary":analysisSummary}
+    #YP: added perInstanceStatistic, numRunsPerInstance, and numPerInstanceBootstrapSamples
+    contents = {"customCommands":customCommands, "algName":escapeNonAlNumChars(algName), "instName":escapeNonAlNumChars(instName), "models":modelsStr, "numSizes":len(sizes), "largestSupportSize":sizes[threshold-1], "numBootstrapSamples":"%d" % numBootstrapSamples, "statistic":statistic, "table-Details-dataset-support":"\\input{%s}" % tableDetailsSupportFileName, "table-Details-dataset-challenge":"\\input{%s}" % tableDetailsChallengeFileName, "table-Fitted-models":"\\input{%s}" % tableFittedModelsFileName, "table-Bootstrap-intervals-of-parameters":"\\input{%s}" % tableBootstrapIntervalsParaFileName, "table-Bootstrap-intervals-support":"\\input{%s}" % tableBootstrapIntervalsSupportFileName, "table-Bootstrap-intervals-challenge":"\\input{%s}" % tableBootstrapIntervalsChallengeFileName, "figure-cdfs":"\\includegraphics[width=0.8\\textwidth]{%s}" % figureCdfsFileName, "figure-fittedModels":"\\includegraphics[width=0.8\\textwidth]{%s}" % (figureFittedModelsFileName), "figure-fittedResidues":"\\includegraphics[width=0.8\\textwidth]{%s}" % (figureFittedResiduesFileName), "supportSizes":getSizesStr(sizes, 0, threshold), "challengeSizes":getSizesStr(sizes, threshold, len(sizes)), "analysisSummary":analysisSummary, "perInstanceStatistic":perInstanceStatistic, "numRunsPerInstance":numRunsPerInstance, "numPerInstanceBootstrapSamples":numPerInstanceBootstrapSamples}
     with open(latexTemplate, "r") as inFile:
         with open("scaling_%s.tex" % removeSubstrs(algName, '/'), "w") as outFile:
             for line in inFile:

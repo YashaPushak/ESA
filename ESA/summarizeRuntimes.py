@@ -45,6 +45,8 @@ def getRuntimesFromFile(dirName, filename, numRunsPerInstance):
     sizeRuntimes = {}
     sizeNumInsts = {}
     header = True
+    maxWarnings = 10
+    updatedNumRunsPerInstance = False
     with open(dirName+"/"+filename, 'r') as runtimesFile:
         for line in runtimesFile:
             if line.strip()[0] == '#':
@@ -70,14 +72,23 @@ def getRuntimesFromFile(dirName, filename, numRunsPerInstance):
                 #if runtime < 0:
                 #    runtime = float('inf')
                 instRuntimes.append(runtime)
-            if(numRunsPerInstance > 0 and not len(instRuntimes) == numRunsPerInstance):
-                numWarning += 1
-                if(numWarning <= 10):
-                    print('[Warning]: Instance ' + terms[0] + ' has ' + str(len(instRuntimes)) + ' running times and not the specified ' + str(numRunsPerInstance) + ' running times.')
-            
+            #Update the number of running times per instance if needed.
+            if(numRunsPerInstance == 0):
+                numRunsPerInstance = len(instRuntimes)
+                updatedNumRunsPerInstance = True
+            #Check that the number of running times is consistent.
+            if(not len(instRuntimes) == numRunsPerInstance and not numRunsPerInstance == 'multiple'):
+                if(not updatedNumRunsPerInstance):
+                    numWarning += 1
+                    if(numWarning <= maxWarnings):
+                        print('[Warning]: Instance ' + terms[0] + ' has ' + str(len(instRuntimes)) + ' running times and not the specified ' + str(numRunsPerInstance) + ' running times. We are ignoring the discrepency and continuing; however, per-instance statistics for this instance will be based on the ' + str(len(instRuntimes)) + ' running times, rather than ' + str(numRunsPerInstance))
+                else:
+                    print('[Warning]: Number of independent runs per instance (numRunsPerInstance) was not specified and the number of running times provided is not consistent across all instances. We are ignoring the discrepency and continuing. The per-instance statistics for each instance will be based on the number of available running times.')
+                numRunsPerInstance = 'multiple'
+
             sizeRuntimes[ int(float(terms[1])) ].append( instRuntimes )
     
-    if(numWarning - 10 > 0):
+    if(numWarning - maxWarnings > 0):
         print('[Warning]: ' + str(numWarning - 10) + ' similar warnings suppressed.')
 
     for size in sorted( sizeRuntimes ):
@@ -107,7 +118,7 @@ def getRuntimesFromFile(dirName, filename, numRunsPerInstance):
 #        print(len(runtimes[i]))
     #print(sizeRuntimes)
     #print(numInsts)
-    return (sizes, runtimes, numInsts)
+    return (sizes, runtimes, numInsts, numRunsPerInstance)
 
 def prepareRuntimesTexTable(st, ed, sizes, counts, numInsts, means, coeffVars, q10s, q25s, medians, q75s, q90s):
     res = ""

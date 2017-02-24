@@ -190,6 +190,7 @@ def evaluateModelsBootstrap( modelNames, threshold, statIntervals, bData, obsvLo
     #last updated: December 1st, 2016
     #I am creating a new version of the above function that uses the bootstrap values of the desired statistics, not just the observed ones. 
     
+    intervalsData = []
     res = ""
     largerHalfIdx = (len(statIntervals)+threshold)/2
     for k in range(0, len(modelNames)):
@@ -207,6 +208,9 @@ def evaluateModelsBootstrap( modelNames, threshold, statIntervals, bData, obsvLo
         print perBelowIntervalsLarger
         print perWithinIntervals
         print perWithinIntervalsLarger
+
+        intervalsData.append([perAboveIntervals, perWithinIntervals, perBelowIntervals, perAboveIntervalsLarger, perWithinIntervalsLarger, perBelowIntervalsLarger])
+
         if perWithinIntervals <= 0.70 or perWithinIntervalsLarger <= 0.70:
             if perBelowIntervals > 0.75 or perBelowIntervalsLarger > 0.75:
                 res += "the %s model over-estimates the data" % modelNames[k]
@@ -224,6 +228,12 @@ def evaluateModelsBootstrap( modelNames, threshold, statIntervals, bData, obsvLo
             res += "the %s model fits the data very well" % modelNames[k]
         else:
             res += "the %s model tends to fit the data" % modelNames[k]
+    
+    with open('table_qualitative-results.csv','w') as f_out:
+         f_out.write('strings, ' + res)
+
+    csvHelper.genCSV('.','table_challenge-within-intervals.csv',['Percent above intervals','Percent within intervals','Percent below intervals','Percent above intervals (larger half)','Percent within intervals (larger half)','Percent below intervals'], modelNames, intervalsData)
+
     return res
 
 
@@ -269,7 +279,7 @@ def calWithinIntervals(data,los,ups,threshold,largerHalfIdx,k):
     return (perAboveIntervals, perAboveIntervalsLarger, perWithinIntervals, perWithinIntervalsLarger, perBelowIntervals, perBelowIntervalsLarger)
 
 
-def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the problem instances", modelFileName="models.txt", threshold=0, alpha=95, numBootstrapSamples=100, statistic="median", toModifyModelDefaultParas=False, tableDetailsSupportFileName="table_Details-dataset-support", tableDetailsChallengeFileName="table_Details-dataset-challenge", tableFittedModelsFileName="table_Fitted-models", tableBootstrapIntervalsParaFileName="table_Bootstrap-intervals-of-parameters", tableBootstrapIntervalsSupportFileName="table_Bootstrap-intervals_support", tableBootstrapIntervalsChallengeFileName="table_Bootstrap-intervals_challenge", figureCdfsFileName="cdfs", figureFittedModelsFileName="fittedModels", figureFittedResiduesFileName="fittedResidues", latexTemplate = "template-AutoScaling.tex", modelPlotTemplate = "template_plotModels.plt", residuePlotTemplate = "template_plotResidues.plt", gnuplotPath = '', numRunsPerInstance = 0, perInstanceStatistic="median"):
+def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the problem instances", modelFileName="models.txt", threshold=0, alpha=95, numBootstrapSamples=100, statistic="median", toModifyModelDefaultParas=False, tableDetailsSupportFileName="table_Details-dataset-support", tableDetailsChallengeFileName="table_Details-dataset-challenge", tableFittedModelsFileName="table_Fitted-models", tableBootstrapIntervalsParaFileName="table_Bootstrap-intervals-of-parameters", tableBootstrapIntervalsSupportFileName="table_Bootstrap-intervals_support", tableBootstrapIntervalsChallengeFileName="table_Bootstrap-intervals_challenge", figureCdfsFileName="cdfs", figureFittedModelsFileName="fittedModels", figureFittedResiduesFileName="fittedResidues", latexTemplate = "template-AutoScaling.tex", modelPlotTemplate = "template_plotModels.plt", residuePlotTemplate = "template_plotResidues.plt", gnuplotPath = '', numRunsPerInstance = 0, perInstanceStatistic="median", numPerInstanceBootstrapSamples=10):
     #   get parameter values
     if os.path.exists( fileDir+"/configurations.txt" ):
         with open( fileDir+"/configurations.txt", "r") as configFile:
@@ -307,6 +317,9 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
                     #YP: Added perInstanceStatistic to configuration file
                     if terms[0].strip() == "perInstanceStatistic":
                         perInstanceStatistic = terms[1].strip()
+                    #YP: Added numPerInstanceBootstrapSamples to configuration file
+                    if terms[0].strip() == "numPerInstanceBootstrapSamples":
+                        numPerInstanceBootstrapSamples = int(terms[1].strip())
                     #YP: Added modifyDefaultParameters to configuration file
                     if terms[0].strip() == "modifyDefaultParameters":
                         toModifyModelDefaultParas = (terms[1].strip() == "True")
@@ -325,7 +338,7 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
         os.system( "cp pdflatex_input.txt " + fileDir +"/pdflatex_input.txt" )    
     #print(numRunsPerInstance)
     #   read in runtimes and summarize
-    (sizes, runtimes, numInsts) = summarizeRuntimes.getRuntimesFromFile( fileDir, fileName, numRunsPerInstance )
+    (sizes, runtimes, numInsts, numRunsPerInstance) = summarizeRuntimes.getRuntimesFromFile( fileDir, fileName, numRunsPerInstance )
 
     cwd = os.getcwd()
     os.chdir( fileDir )
@@ -341,7 +354,7 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     
 
     #YP: Refactored code to only create bootstrap samples once to save time.
-    bStat = bootstrapHelper.doBootstrap(runtimes, numInsts, numBootstrapSamples, statistic, perInstanceStatistic)
+    bStat = bootstrapHelper.doBootstrap(runtimes, numInsts, numBootstrapSamples, statistic, perInstanceStatistic, numPerInstanceBootstrapSamples)
 
 
     #   calculate confidence intervals of observed data
@@ -394,7 +407,7 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
                 os.system('rm -f ' + logFile + '.log')
 
     #   generate files
-    latexHelper.genTexFile( fileDir, algName, instName, sizes, counts, numInsts, threshold, modelNames, modelOriReps, modelNumParas, numBootstrapSamples, statistic, tableDetailsSupportFileName, tableDetailsChallengeFileName, tableFittedModelsFileName, tableBootstrapIntervalsParaFileName, tableBootstrapIntervalsSupportFileName, tableBootstrapIntervalsChallengeFileName, figureCdfsFileName, figureFittedModelsFileName, figureFittedResiduesFileName, evaluateModelsBootstrap( modelNames, threshold, statIntervals, bStat, obsvLos, obsvUps, preds, predLos, predUps ), latexTemplate )
+    latexHelper.genTexFile( fileDir, algName, instName, sizes, counts, numInsts, threshold, modelNames, modelOriReps, modelNumParas, numBootstrapSamples, statistic, numRunsPerInstance, perInstanceStatistic, numPerInstanceBootstrapSamples, tableDetailsSupportFileName, tableDetailsChallengeFileName, tableFittedModelsFileName, tableBootstrapIntervalsParaFileName, tableBootstrapIntervalsSupportFileName, tableBootstrapIntervalsChallengeFileName, figureCdfsFileName, figureFittedModelsFileName, figureFittedResiduesFileName, evaluateModelsBootstrap( modelNames, threshold, statIntervals, bStat, obsvLos, obsvUps, preds, predLos, predUps ), latexTemplate )
     os.system( "pdflatex 'scaling_%s.tex' >& /dev/null < pdflatex_input.txt" % latexHelper.removeSubstrs( algName, '/' ) )
     os.system( "bibtex 'scaling_%s' >& /dev/null < pdflatex_input.txt" %       latexHelper.removeSubstrs( algName, '/' ) )
     os.system( "pdflatex 'scaling_%s.tex' >& /dev/null < pdflatex_input.txt" % latexHelper.removeSubstrs( algName, '/' ) )
