@@ -17,7 +17,7 @@ def fillModelRepsWValues( modelRep, valueTuple ):
         modelRep = modelRep[0:stIdx] + valueTuple[ord(id)-ord('a')] + modelRep[edIdx:]
     return modelRep
 
-def genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes, threshold, para, rmseTrains, rmseTests, expectedTestRMSE, texFileName="table_Fitted-models.tex"):
+def genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes, threshold, para, rmseTrains, rmseTests, meanTestRMSE, texFileName="table_Fitted-models.tex"):
     res = ""
     res += "\\begin{tabular}{ccccc} \n"
     res += "\\hline \n"
@@ -28,7 +28,7 @@ def genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes
     for i in range(0, len(modelNames)):
         if i == 0:
             res += "\\multirow{%d}{*}{%s}" % (len(modelNames), latexHelper.escapeNonAlNumChars( algName ) )
-        if expectedTestRMSE[i] == min(expectedTestRMSE):
+        if meanTestRMSE[i] == min(meanTestRMSE):
             modelParasTuple = ()
             for k in range(0, modelNumParas[i]):
                 modelParasTuple += ( latexHelper.numToTex(para[i][k], 5), )
@@ -121,13 +121,13 @@ def fitModels( algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes,
     return (para, seTrains, seTests)
 
 
-def makeTableFittedModels(para, rmseTrains, rmseTests, expectedTestRMSE, modelNumParas, modelReps, modelNames, threshold, algName, sizes):
+def makeTableFittedModels(para, rmseTrains, rmseTests, meanTestRMSE, modelNumParas, modelReps, modelNames, threshold, algName, sizes):
     #Author: Yasha Pushak
     #Last updated: November 17th, 2016
     #I pulled the original code for this out of the fitModels function
     #and created a new one here. 
     csvHelper.genCSV( ".", "table_Fitted-models.csv", ["Model", "RMSE (support)", "RMSE (challenge)", "Expected RMSE (challenge)"], \
         [ algName+" "+modelName+". Model" for modelName in modelNames ], \
-        [ [ para[k], rmseTrains[k], rmseTests[k], expectedTestRMSE[k] ] for k in range(0, len(modelNames)) ] )
-    genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes, threshold, para, rmseTrains, rmseTests, expectedTestRMSE)
+        [ [ para[k], rmseTrains[k], rmseTests[k], meanTestRMSE[k] ] for k in range(0, len(modelNames)) ] )
+    genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes, threshold, para, rmseTrains, rmseTests, meanTestRMSE)
 

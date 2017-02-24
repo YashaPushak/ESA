@@ -131,10 +131,95 @@ def getLoUps( modelNames, data, alpha=95 ):
     return (dataLos, dataUps)
 
 
+
 def getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
+    #Author: Yasha Pushak
+    #Last updated: February 24th, 2017
+    #Calculates bootstrap confidence intervals for the challenge RMSE by 
+    #combining two sources of uncertainty: unknown running times and 
+    #bootstrap samples of fitted models and challenge data. 
+
+    #Initialize the squared error for the test sizes to zero for all of the 
+    #bootstrap models.
+    seTests = []
+
+    for model in range(0,len(modelNames)):
+        seTests.append([])
+        #loop over the bootstrap samples, j
+        for j in range(0,len(preds[model][0])):
+            seTests[model].append([0.0, 0.0])
+
+    
+
+    for model in range(0,len(modelNames)):
+        for size in range(threshold, len(sizes)):
+            #loop over the bootstrap samples, j
+            for j in range(0,len(preds[model][size])):
+                predValue = preds[model][size][j]
+                #calculate a lower bound on the squared error (zero if the prediction is within the inteveral)
+                if bStat[0][size][j] > predValue or predValue > bStat[1][size][j]:
+                    #rmseTests[k][j][0] += (statIntervals[i][1]-predValue)**2 
+                    seTests[model][j][0] += min( (bStat[0][size][j]-predValue)**2, (bStat[1][size][j]-predValue)**2) 
+                #calculate an upper bound on the squared error
+                seTests[model][j][1] += max( (bStat[0][size][j]-predValue)**2, (bStat[1][size][j]-predValue)**2 )
+
+    meanTestRMSE = []
+
+    rmseTestBounds = [[-1,-1] for model in range(0,len(modelNames))]
+
+    #Divide and take the root to get the RMSE from the SEs.
+    for model in range(0,len(modelNames)):
+        loRMSE = []
+        upRMSE = []
+
+        #Calculate the lower and upper bound RMSE for each bootstrap sample.
+        #loop over the bootstrap samples, j.
+        for j in range(0,len(preds[model][0])):
+            #0 is the lower bound, 1 is the upper bound.
+            loRMSE.append(math.sqrt(seTests[model][j][0]/(len(sizes) - threshold)))
+            upRMSE.append(math.sqrt(seTests[model][j][1]/(len(sizes) - threshold)))
+            #rmseTests[model][j][i] = math.sqrt(rmseTests[model][j][i]/(len(sizes) - threshold))
+
+        #get the Q2.5 and Q97.5 for the lower and upper bounds, respectively, to get an interval
+        #for the RMSE that combines the two sources of noise
+        rmseTestBounds[model][0] = summarizeRuntimes.calStatistic(loRMSE, 'Q' + str(50-alpha/2.0))
+        rmseTestBounds[model][1] = summarizeRuntimes.calStatistic(upRMSE, 'Q' + str(50+alpha/2.0))
+        
+        #Here, we calculate a statistic to be used to select the model with the best RMSE.
+        #We note that we only use the lower bounds because in the event the some running
+        #times are unknown, we would otherwise often result in this statistic becoming 'inf'
+        #for every model. On the other hand, if all of the running times are known, then
+        #the lower bound is equal to the upper bound for each bootstrap sample. This is
+        #similar to how Zongxu was original handling this problem.
+        meanTestRMSE.append( summarizeRuntimes.calStatistic(loRMSE, 'mean') )
+
+    return (rmseTestBounds, meanTestRMSE)
+    
+
+
+
+def getBootstrapTestRMSEExperimental(preds, bStat, sizes, threshold, modelNames, alpha=95):
     #Author: Yasha Pushak
     #Last updated: November 16th, 2016
     #Calculates bootstrap confidence intervals for the challenge RMSE.
+    #NOTE (February 24th, 2017): This function contains several experimental
+    #methods for boiling down the bounds on the RMSE from two sources of 
+    #uncertainty: unknown running times, and bootstrap samples of the fitted
+    #models and data. This is something that can be looked into more in the 
+    #the future to improve the accuracy of the selected model. However,
+    #doing so should probably make use of some extensive empirical experiments
+    #to determine what method provides the most accurate results. In lieu of 
+    #such a study, I (Yasha) have chosen to use the same method that Zongxu
+    #did for handling the uncertaininty due to unknown running times, that is,
+    #since he assumes that unkown running times are always bounded by [0,inf),
+    #he always picked the model with the smallest lower bound on the RMSE.
+    #Since I have modified the code to include the uncertaintiy due to 
+    #bootstrap samples of the fitted models and challenge data, I am generalizing
+    #his method in the most straightforward way, which is to take the mean of 
+    #the lower bounds on the RMSE, a statistic which is guaranteed to always
+    #exist. For simplicity, I have extracted the code to do this from my mess
+    #of earlier attempts, and put it in the much cleaner function 
+    #"getBootstrapTestRMSE"
 
     #Initialize the squared error for the test sizes to zero for all of the 
     #bootstrap models.

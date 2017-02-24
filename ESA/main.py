@@ -370,12 +370,12 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
 
     #YP: added a function call to check which model is considered the best
     #fit after the bootstrap sampling
-    (rmseTestBounds, expectedTestRMSE) = bootstrapHelper.getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames)
+    (rmseTestBounds, meanTestRMSE) = bootstrapHelper.getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames)
 
     #print(rmseTests)
     #print(rmseTestBounds)
     #YP: Now we create the fitted model tables.
-    modelFittingHelper.makeTableFittedModels(para, rmseTrains, rmseTestBounds, expectedTestRMSE, modelNumParas, modelReps, modelNames, threshold, algName, sizes)
+    modelFittingHelper.makeTableFittedModels(para, rmseTrains, rmseTestBounds, meanTestRMSE, modelNumParas, modelReps, modelNames, threshold, algName, sizes)
 
     #   fit models
     modelFittingHelper.fitModels( algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes, stats, statIntervals, threshold, gnuplotPath, modelFileName)
