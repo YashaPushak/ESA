@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 
 ### Changed
  - Minor refactoring done to improve running time of ESA.
+ - The text-based analysis of the fit of the models is now based not only on the fraction of strongly consistent challenge instance sizes, but also the fraction of weakly consistent instance sizes. The exact decision tree used to generate the text has also been slightly modified to properly encorporate this change. Additional details are included in the LaTeX report, which summarize what each descriptive statement means. 
 
 
 ## [1.1] - 2016-11-17

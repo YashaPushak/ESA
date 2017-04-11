@@ -185,6 +185,142 @@ def evaluateModels( modelNames, threshold, statIntervals, predLos, predUps ):
     return res
 
 
+
+def evaluateModelsConsistency(modelNames, threshold, statIntervals, obsvLos, obsvUps, predLos, predUps):
+    #Author: Yasha Pushak
+    #Last updated: April 5th, 2017
+    #I am creating a third method for analysing the consistency of the data to create a text-based description. Unlike the original, this one
+    #counts the number of instance sizes for which model predictions are both strongly and weakly consistent (instead of just strongly consistent)
+    #with the observed data. 
+
+    types = set([])
+    intervalsData = []
+
+    res = ""
+    #res = "Based on the observed data and the predicted bootstrap intervals from the models, we see that "
+    largerHalfIdx = (len(statIntervals)+threshold)/2
+    for k in range(0, len(modelNames)):
+        if k == len(modelNames)-1:
+            res += ", and "
+        elif k > 0:
+            res += ", "
+        numOverIntervals = 0 
+        numOverIntervalsLarger = 0 
+        numBelowIntervals = 0 
+        numBelowIntervalsLarger = 0 
+        numStronglyWithinIntervals = 0 
+        numStronglyWithinIntervalsLarger = 0 
+        numWeaklyWithinIntervals = 0
+        numWeaklyWithinIntervalsLarger = 0
+        for size in range(threshold, len(statIntervals)):
+            if obsvUps[size]<predLos[k][size]:
+                numBelowIntervals += 1
+                if size>=largerHalfIdx:
+                    numBelowIntervalsLarger += 1
+            elif obsvLos[size]>predUps[k][size]:
+                numOverIntervals += 1
+                if size>=largerHalfIdx:
+                    numOverIntervalsLarger += 1
+            else:
+                numWeaklyWithinIntervals += 1
+                if size>=largerHalfIdx:
+                    numWeaklyWithinIntervalsLarger += 1
+                if statIntervals[size][1] >= predLos[k][size] and statIntervals[size][0] <= predUps[k][size]:
+                    numStronglyWithinIntervals += 1
+                    if size>=largerHalfIdx:
+                        numStronglyWithinIntervalsLarger += 1
+                     
+        perAboveIntervals = 1.0*numOverIntervals/(len(statIntervals)-threshold)
+        perAboveIntervalsLarger = 1.0*numOverIntervalsLarger/(len(statIntervals)-largerHalfIdx)
+        perBelowIntervals = 1.0*numBelowIntervals/(len(statIntervals)-threshold)
+        perBelowIntervalsLarger = 1.0*numBelowIntervalsLarger/(len(statIntervals)-largerHalfIdx)
+        perStronglyConsistent = 1.0*numStronglyWithinIntervals/(len(statIntervals)-threshold)
+        perStronglyConsistentLarger = 1.0*numStronglyWithinIntervalsLarger/(len(statIntervals)-largerHalfIdx)
+        perWeaklyConsistent = 1.0*numWeaklyWithinIntervals/(len(statIntervals)-threshold)
+        perWeaklyConsistentLarger = 1.0*numWeaklyWithinIntervalsLarger/(len(statIntervals)-largerHalfIdx)
+
+        #print("Percentage above intervals for model " + modelNames[k])
+        #print perAboveIntervals
+        #print perAboveIntervalsLarger
+        #print("Percentage below intervals for model " + modelNames[k])
+        #print perBelowIntervals
+        #print perBelowIntervalsLarger
+        #print("Percentage strongly consistent for model " + modelNames[k])
+        #print perStronglyConsistent
+        #print perStronglyConsistentLarger
+        #print("Percentage weakly consistent for model " + modelNames[k])
+        #print perWeaklyConsistent
+        #print perWeaklyConsistentLarger
+
+        if(perStronglyConsistent >= 0.95):
+            res += "the %s model fits the data very well" % modelNames[k]
+            types.add('stronglyConsistent')
+        elif(perWeaklyConsistent >= 0.90 or perWeaklyConsistentLarger >= 0.90):
+            res += "the %s model tends to fit the data" % modelNames[k]
+            types.add('weaklyConsistent')
+        elif(perAboveIntervals >= 0.70 or perAboveIntervalsLarger >= 0.70):
+            res += "the %s model under-estimates the data" % modelNames[k]
+            types.add('under')
+        elif(perBelowIntervals >= 0.70 or perBelowIntervalsLarger >= 0.70):
+            res += "the %s model over-estimates the data" % modelNames[k]
+            types.add('over')
+        elif(perBelowIntervals < 0.05 or perBelowIntervalsLarger < 0.05):
+            res += "the %s model tends to under-estimate the data" % modelNames[k]
+            types.add('tendUnder')
+        elif(perAboveIntervals < 0.05 or perAboveIntervalsLarger < 0.05):
+            res += "the %s model tends to over-estimate the data" % modelNames[k]
+            types.add('tendOver')
+        else:
+            res += "the %s model does not fit the data well" % modelNames[k]
+            types.add('noFit')
+
+        intervalsData.append([perStronglyConsistent, perWeaklyConsistent, perAboveIntervals, perBelowIntervals, perStronglyConsistentLarger, perWeaklyConsistentLarger, perAboveIntervalsLarger, perBelowIntervalsLarger])
+
+
+    with open('table_qualitative-results.csv','w') as f_out:
+         f_out.write('strings, ' + res)
+
+    csvHelper.genCSV('.','table_challenge-within-intervals.csv',['Percent Strongly Consistent', 'Percent Weakly Consistent', 'Percent above intervals','Percent below intervals','Percent Strongly Consistent (larger half)', 'Percent Weakly Consistent (larger half)', 'Percent above intervals (larger half)','Percent below intervals (larger half)'], modelNames, intervalsData)
+
+
+    
+    resExplain = " We base these statements on an analysis of the fraction of predicted bootstrap intervals that are strongly consistent, "
+    resExplain += "weakly consistent and disjoint from the observed bootstrap intervals for the challenge data. To provide stronger emphasis "
+    resExplain += "for the largest instance sizes, we also consider these fractions for the largest half of the challenge instance sizes. "
+    resExplain += "To be precise, "
+
+    num = 0
+    for type in types:
+        if(num == len(types) - 1):
+            resExplain += "; and "
+        elif(num > 0):
+            resExplain += "; "
+
+        if(type == 'stronglyConsistent'):
+            resExplain += "we say a model fits the data very well if 95\% or more of the predicted bootstrap intervals are strongly consistent with the observed data"
+        elif(type == 'weaklyConsistent'):
+            resExplain += "we say a model tends to fit the data if 90\% or more of the predicted bootstrap intervals (or the larger half of the predicted intervals) are weakly consistent with the observed data"
+        elif(type == 'under'):
+            resExplain += "we say a model under-estimates the data if more than 70\% of the predicted bootstrap intervals (or more than 70\% of the larger half of the predicted intervals) are disjoint from the observed bootstrap intervals and are below the observed intervals"
+        elif(type == 'over'):
+            resExplain += "we say a model over-estimates the data if more than 70\% of the predicted bootstrap intervals (or more than 70\% of the larger half of the predicted bootstrap intervals) are disjoint from the observed bootstrap intervals and are above the observed intervals"
+        elif(type == 'tendUnder'):
+            resExplain += "we say a model tends to under-estimate the data if more than 10\% of the predicted bootstrap intervals are disjoint from the observed bootstrap intervals, and at least 95\% of the predicted bootstrap intervals (or the larger half of the predicted intervals) are above or are consistent with the observed data"
+        elif(type == 'tendOver'):
+            resExplain += "we say a model tends to over-estimate the data if more than 10\% of the predicted bootstrap intervals are disjoint from the observed bootstrap intervals, and at least 95\% of the predicted bootstrap intervals (or the larger half of the predicted intervals) are consistent with or are below the observed data"
+        elif(type == 'noFit'):
+            resExplain += "we say a model does not fit the data very well if more than 10\% of the predicted bootstrap intervals are disjoint from the observed bootstrap intervals, more than 5\% of the predicted intervals are above the observed intervals, and more than 5\% of the predicted intervals are below the obvserved intervals"
+
+    resExplain += ". "
+
+
+    return [res, resExplain]
+
+       
+        
+
+
+
 def evaluateModelsBootstrap( modelNames, threshold, statIntervals, bData, obsvLos, obsvUps, preds, predLos, predUps ):
     #Author: Yasha Pushak
     #last updated: December 1st, 2016
@@ -407,7 +543,7 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
                 os.system('rm -f ' + logFile + '.log')
 
     #   generate files
-    latexHelper.genTexFile( fileDir, algName, instName, sizes, counts, numInsts, threshold, modelNames, modelOriReps, modelNumParas, numBootstrapSamples, statistic, numRunsPerInstance, perInstanceStatistic, numPerInstanceBootstrapSamples, tableDetailsSupportFileName, tableDetailsChallengeFileName, tableFittedModelsFileName, tableBootstrapIntervalsParaFileName, tableBootstrapIntervalsSupportFileName, tableBootstrapIntervalsChallengeFileName, figureCdfsFileName, figureFittedModelsFileName, figureFittedResiduesFileName, evaluateModelsBootstrap( modelNames, threshold, statIntervals, bStat, obsvLos, obsvUps, preds, predLos, predUps ), latexTemplate )
+    latexHelper.genTexFile( fileDir, algName, instName, sizes, counts, numInsts, threshold, modelNames, modelOriReps, modelNumParas, numBootstrapSamples, statistic, numRunsPerInstance, perInstanceStatistic, numPerInstanceBootstrapSamples, tableDetailsSupportFileName, tableDetailsChallengeFileName, tableFittedModelsFileName, tableBootstrapIntervalsParaFileName, tableBootstrapIntervalsSupportFileName, tableBootstrapIntervalsChallengeFileName, figureCdfsFileName, figureFittedModelsFileName, figureFittedResiduesFileName, evaluateModelsConsistency(modelNames, threshold, statIntervals, obsvLos, obsvUps, predLos, predUps), latexTemplate )
     os.system( "pdflatex 'scaling_%s.tex' >& /dev/null < pdflatex_input.txt" % latexHelper.removeSubstrs( algName, '/' ) )
     os.system( "bibtex 'scaling_%s' >& /dev/null < pdflatex_input.txt" %       latexHelper.removeSubstrs( algName, '/' ) )
     os.system( "pdflatex 'scaling_%s.tex' >& /dev/null < pdflatex_input.txt" % latexHelper.removeSubstrs( algName, '/' ) )
