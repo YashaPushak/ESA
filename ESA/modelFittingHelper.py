@@ -17,7 +17,7 @@ def fillModelRepsWValues( modelRep, valueTuple ):
         modelRep = modelRep[0:stIdx] + valueTuple[ord(id)-ord('a')] + modelRep[edIdx:]
     return modelRep
 
-def genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes, threshold, para, rmseTrains, rmseTests, meanTestRMSE, texFileName="table_Fitted-models.tex"):
+def genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes, threshold, para, rmseTrains, rmseTests, texFileName="table_Fitted-models.tex"):
     res = ""
     res += "\\begin{tabular}{ccccc} \n"
     res += "\\hline \n"
@@ -28,7 +28,7 @@ def genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes
     for i in range(0, len(modelNames)):
         if i == 0:
             res += "\\multirow{%d}{*}{%s}" % (len(modelNames), latexHelper.escapeNonAlNumChars( algName ) )
-        if meanTestRMSE[i] == min(meanTestRMSE):
+        if rmseTests[i][0] == min(rmseTests)[0]:
             modelParasTuple = ()
             for k in range(0, modelNumParas[i]):
                 modelParasTuple += ( latexHelper.numToTex(para[i][k], 5), )
@@ -77,6 +77,7 @@ def fitModels( algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes,
     for k in range(0, len(modelNames)):
         if len(para[k]) == 0:
             print "[ERROR]: Model fitting failed for the " + modelNames[k] + " model!"
+            print "[ERROR]: This is often due to poor default fitting parameters; however, you can find more information in 'fit.log'."
             print "[ERROR]: Please try updating the initial values for the " + modelNames[k] + " model parameters in " + modelFileName + "."
             print "[ERROR]: Ideally these values should be within one order of magnitude of their fitted values."
             sys.exit(1)
@@ -121,13 +122,15 @@ def fitModels( algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes,
     return (para, seTrains, seTests)
 
 
-def makeTableFittedModels(para, rmseTrains, rmseTests, meanTestRMSE, modelNumParas, modelReps, modelNames, threshold, algName, sizes):
+def makeTableFittedModels(para, rmseTrains, rmseTests, modelNumParas, modelReps, modelNames, threshold, algName, sizes):
     #Author: Yasha Pushak
-    #Last updated: November 17th, 2016
+    #First Created: November 17th, 2016 (Approx.)
+    #Last updated: March 20th, 2017
     #I pulled the original code for this out of the fitModels function
     #and created a new one here. 
-    csvHelper.genCSV( ".", "table_Fitted-models.csv", ["Model", "RMSE (support)", "RMSE (challenge)", "Expected RMSE (challenge)"], \
+    csvHelper.genCSV( ".", "table_Fitted-models.csv", ["Model", "RMSE (support)", "RMSE (challenge)"], \
         [ algName+" "+modelName+". Model" for modelName in modelNames ], \
-        [ [ para[k], rmseTrains[k], rmseTests[k], meanTestRMSE[k] ] for k in range(0, len(modelNames)) ] )
-    genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes, threshold, para, rmseTrains, rmseTests, meanTestRMSE)
+        [ [ para[k], rmseTrains[k], rmseTests[k]] for k in range(0, len(modelNames)) ] )
+    genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes, threshold, para, rmseTrains, rmseTests)
+
 

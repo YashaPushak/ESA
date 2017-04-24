@@ -4,6 +4,7 @@ import math
 import random
 import summarizeRuntimes
 import csvHelper
+import latexHelper
 
 def doBootstrap(data, numInsts, numSamples, statistic, perInstanceStatistic, numSamplesPerInstance):
     #Author: Zongxu Mu, Yasha Pushak
@@ -46,8 +47,8 @@ def doBootstrap(data, numInsts, numSamples, statistic, perInstanceStatistic, num
                     q = random.randrange(0,len(bData[j][p]))
                     bTmpData.append( bData[j][p][q] )
 
-            bStat[0][j].append( summarizeRuntimes.calStatistic( bTmpData+[ 0 for i in range(0, size-len(bTmpData)) ], statistic ) )
-            bStat[1][j].append( summarizeRuntimes.calStatistic( bTmpData+[ float('inf') for i in range(0, size-len(bTmpData)) ], statistic ) )
+            bStat[0][j].append( summarizeRuntimes.calStatistic( bTmpData+[ 0 for ind in range(0, size-len(bTmpData)) ], statistic ) )
+            bStat[1][j].append( summarizeRuntimes.calStatistic( bTmpData+[ float('inf') for ind in range(0, size-len(bTmpData)) ], statistic ) )
         if(i%10 == 9):
             print(str(i+1) + " bootstrap samples made...")
     return bStat
@@ -132,58 +133,115 @@ def getLoUps( modelNames, data, alpha=95 ):
 
 
 
-def getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
+def getBootstrapRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
     #Author: Yasha Pushak
     #Last updated: February 24th, 2017
     #Calculates bootstrap confidence intervals for the challenge RMSE by 
     #combining two sources of uncertainty: unknown running times and 
     #bootstrap samples of fitted models and challenge data. 
 
-    #Initialize the squared error for the test sizes to zero for all of the 
-    #bootstrap models.
+    #Initialize the squared error for the train and test sizes to zero for 
+    #all of the bootstrap models.
     seTests = []
+    seTrains = []
 
     for model in range(0,len(modelNames)):
         seTests.append([])
+        seTrains.append([])
         #loop over the bootstrap samples, j
         for j in range(0,len(preds[model][0])):
-            seTests[model].append([0.0, 0.0])
+            #The first position is for the lower bound on the RMSE
+            #The second position is for the RMSE of the geometric mean of the point estimate intervals
+            #The last position is for the upper bound on the RMSE
+            seTests[model].append([0.0, 0.0, 0.0])
+            seTrains[model].append([0.0, 0.0, 0.0])
 
     
 
     for model in range(0,len(modelNames)):
+
+        #Calculate the squared errors for the support instance sizes
+        for size in range(0, threshold):
+            #loop over the bootstrap samples, j
+            for j in range(0,len(preds[model][size])):
+                predValue = preds[model][size][j]
+
+                #calculate a lower bound on the squared error (zero if the prediction is within the inteveral)
+                if bStat[0][size][j] > predValue or predValue > bStat[1][size][j]:
+                    #rmseTests[k][j][0] += (statIntervals[i][1]-predValue)**2 
+                    seTrains[model][j][0] += min( (bStat[0][size][j]-predValue)**2, (bStat[1][size][j]-predValue)**2) 
+
+                #Calculate the squared error for the geometric mean of the interval
+                
+                geoMean = (bStat[0][size][j]*bStat[1][size][j])**0.5
+                #Replace NaN with infinity.
+                if(math.isnan(geoMean)):
+                    geoMean = float('inf')
+                seTrains[model][j][1] = (geoMean-predValue)**2
+
+                #calculate an upper bound on the squared error
+                seTrains[model][j][2] += max( (bStat[0][size][j]-predValue)**2, (bStat[1][size][j]-predValue)**2 )
+
+        #Calculate the squared errors for the challenge instance sizes
         for size in range(threshold, len(sizes)):
             #loop over the bootstrap samples, j
             for j in range(0,len(preds[model][size])):
                 predValue = preds[model][size][j]
+
                 #calculate a lower bound on the squared error (zero if the prediction is within the inteveral)
                 if bStat[0][size][j] > predValue or predValue > bStat[1][size][j]:
                     #rmseTests[k][j][0] += (statIntervals[i][1]-predValue)**2 
                     seTests[model][j][0] += min( (bStat[0][size][j]-predValue)**2, (bStat[1][size][j]-predValue)**2) 
-                #calculate an upper bound on the squared error
-                seTests[model][j][1] += max( (bStat[0][size][j]-predValue)**2, (bStat[1][size][j]-predValue)**2 )
 
-    meanTestRMSE = []
+                #Calculate the squared error for the geometric mean of the interval
+                geoMean = (bStat[0][size][j]*bStat[1][size][j])**0.5
+                #replace NaN with infinity. (This occurs when there are too
+                #many unknown running times bounded by 0 and inf.)
+                if(math.isnan(geoMean)):
+                    geoMean = float('inf')
+                seTests[model][j][1] = (geoMean-predValue)**2
+                if(math.isnan(seTests[model][j][1])):
+                    print(str(geoMean) + ' ' + str(predValue))                
+
+                #calculate an upper bound on the squared error
+                seTests[model][j][2] += max( (bStat[0][size][j]-predValue)**2, (bStat[1][size][j]-predValue)**2 )
+
+    medianTrainRMSEGeoMean = []
+    meanTrainRMSEGeoMean = []
+    medianTestRMSEGeoMean = []
+    meanTestRMSEGeoMean = []
 
     rmseTestBounds = [[-1,-1] for model in range(0,len(modelNames))]
+    rmseTrainBounds = [[-1,-1] for model in range(0,len(modelNames))]
 
     #Divide and take the root to get the RMSE from the SEs.
     for model in range(0,len(modelNames)):
-        loRMSE = []
-        upRMSE = []
+        loTrainRMSE = []
+        geoMeanTrainRMSE = []
+        upTrainRMSE = []
+        loTestRMSE = []
+        geoMeanTestRMSE = []
+        upTestRMSE = []
 
         #Calculate the lower and upper bound RMSE for each bootstrap sample.
         #loop over the bootstrap samples, j.
         for j in range(0,len(preds[model][0])):
-            #0 is the lower bound, 1 is the upper bound.
-            loRMSE.append(math.sqrt(seTests[model][j][0]/(len(sizes) - threshold)))
-            upRMSE.append(math.sqrt(seTests[model][j][1]/(len(sizes) - threshold)))
+            #0 is the lower bound, 1 is the geometric mean (see above), 2 is the upper bound.
+            loTrainRMSE.append(math.sqrt(seTrains[model][j][0]/(len(sizes) - threshold)))
+            geoMeanTrainRMSE.append(math.sqrt(seTrains[model][j][1]/(len(sizes) - threshold)))
+            upTrainRMSE.append(math.sqrt(seTrains[model][j][2]/(len(sizes) - threshold)))
+
+            loTestRMSE.append(math.sqrt(seTests[model][j][0]/(len(sizes) - threshold)))
+            geoMeanTestRMSE.append(math.sqrt(seTests[model][j][1]/(len(sizes) - threshold)))
+            upTestRMSE.append(math.sqrt(seTests[model][j][2]/(len(sizes) - threshold)))
             #rmseTests[model][j][i] = math.sqrt(rmseTests[model][j][i]/(len(sizes) - threshold))
 
         #get the Q2.5 and Q97.5 for the lower and upper bounds, respectively, to get an interval
         #for the RMSE that combines the two sources of noise
-        rmseTestBounds[model][0] = summarizeRuntimes.calStatistic(loRMSE, 'Q' + str(50-alpha/2.0))
-        rmseTestBounds[model][1] = summarizeRuntimes.calStatistic(upRMSE, 'Q' + str(50+alpha/2.0))
+        rmseTrainBounds[model][0] = summarizeRuntimes.calStatistic(loTrainRMSE, 'Q' + str(50-alpha/2.0))
+        rmseTrainBounds[model][1] = summarizeRuntimes.calStatistic(upTrainRMSE, 'Q' + str(50+alpha/2.0))
+        rmseTestBounds[model][0] = summarizeRuntimes.calStatistic(loTestRMSE, 'Q' + str(50-alpha/2.0))
+        rmseTestBounds[model][1] = summarizeRuntimes.calStatistic(upTestRMSE, 'Q' + str(50+alpha/2.0))
         
         #Here, we calculate a statistic to be used to select the model with the best RMSE.
         #We note that we only use the lower bounds because in the event the some running
@@ -191,11 +249,79 @@ def getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
         #for every model. On the other hand, if all of the running times are known, then
         #the lower bound is equal to the upper bound for each bootstrap sample. This is
         #similar to how Zongxu was original handling this problem.
-        meanTestRMSE.append( summarizeRuntimes.calStatistic(loRMSE, 'mean') )
+        medianTrainRMSEGeoMean.append(summarizeRuntimes.calStatistic(geoMeanTrainRMSE,'median'))
+        meanTrainRMSEGeoMean.append(summarizeRuntimes.calStatistic(geoMeanTrainRMSE,'mean'))
+        medianTestRMSEGeoMean.append(summarizeRuntimes.calStatistic(geoMeanTestRMSE,'median'))
+        meanTestRMSEGeoMean.append(summarizeRuntimes.calStatistic(geoMeanTestRMSE,'mean'))
 
-    return (rmseTestBounds, meanTestRMSE)
+
+    return (rmseTrainBounds, rmseTestBounds, medianTrainRMSEGeoMean, meanTrainRMSEGeoMean, medianTestRMSEGeoMean, meanTestRMSEGeoMean)
     
 
+def makeTableBootstrapModelRMSEs(rmseTrainBounds, rmseTestBounds, medianTrainRMSEGeoMean, meanTrainRMSEGeoMean, medianTestRMSEGeoMean, meanTestRMSEGeoMean, modelNames, algName):
+    #Author: Yasha Pushak
+    #First Created: March 21st, 2017
+    #Last updated: March 21st, 2017
+    
+    tableName = 'table_Bootstrap-model-RMSE'
+
+    csvHelper.genCSV( ".", tableName + ".csv", ["Model", "Median RMSE (support)", "RMSE Confidence Interval (support)", "median RMSE (challenge)", "RMSE Confidence Interval (challenge)"], \
+        [ algName+" "+modelName+". Model" for modelName in modelNames ], \
+        [ [medianTrainRMSEGeoMean[k], rmseTrainBounds[k], medianTestRMSEGeoMean[k], rmseTestBounds[k]] for k in range(0, len(modelNames)) ] )
+
+    winnerSelectRule = genBootstrapModelRMSETexTable(algName, modelNames, rmseTrainBounds, rmseTestBounds, medianTrainRMSEGeoMean, meanTrainRMSEGeoMean, medianTestRMSEGeoMean, meanTestRMSEGeoMean, tableName + '.tex')
+
+    return (tableName, winnerSelectRule)
+
+
+def genBootstrapModelRMSETexTable(algName, modelNames, rmseTrainBounds, rmseTestBounds, medianTrainRMSEGeoMean, meanTrainRMSEGeoMean, medianTestRMSEGeoMean, meanTestRMSEGeoMean, texFileName="table_Bootstrap-model-RMSE.tex"):
+    res = ""
+    res += "\\begin{tabular}{cc|cc|cc} \n"
+    res += "\\hline \n"
+    res += " \multirow{2}{*}{Solver} & \multirow{2}{*}{Model} & \multicolumn{2}{c|}{Support RMSE}  & \multicolumn{2}{c}{Challenge RMSE} \\tabularnewline"
+    res += " & & Median & Confidence Interval & Median & Confidence Interval \\tabularnewline"
+    res += "\\hline \n"
+    res += "\\hline \n"
+
+    #Calculate the boldfaced winner
+    if(min(medianTestRMSEGeoMean) == float('inf')):
+        winners = []
+        for i in range(0, len(modelNames)):
+            if(rmseTestBounds[i][0] == min(rmseTestBounds)[0]):
+                winners.append(i)
+        winnerSelectRule = "as per challenge RMSE lower bounds, since the medians are censored"
+    else:
+        winners = []
+        for i in range(0,len(modelNames)):
+            if(medianTestRMSEGeoMean[i] == min(medianTestRMSEGeoMean)):
+                winners.append(i)
+        winnerSelectRule = "as per median challenge RMSE"
+
+    for i in range(0, len(modelNames)):
+        if i == 0:
+            res += "\\multirow{%d}{*}{%s}" % (len(modelNames), latexHelper.escapeNonAlNumChars( algName ) )
+        if i in winners:
+            #passing 1 to genInterval makes it bold.
+            res += latexHelper.prepareTableRow(" & %s." % modelNames[i], \
+                [ latexHelper.bold( latexHelper.numToTex(medianTrainRMSEGeoMean[i], 5), True ), \
+                latexHelper.genInterval( latexHelper.numToTex(rmseTrainBounds[i][0], 5), latexHelper.numToTex(rmseTrainBounds[i][1], 5), 1), \
+                latexHelper.bold( latexHelper.numToTex(medianTestRMSEGeoMean[i], 5), True ), \
+                latexHelper.genInterval( latexHelper.numToTex(rmseTestBounds[i][0], 5), latexHelper.numToTex(rmseTestBounds[i][1], 5), 1), \
+                ] )
+        else:
+            res += latexHelper.prepareTableRow(" & %s." % modelNames[i], \
+                [ "$%s$" % latexHelper.numToTex( medianTrainRMSEGeoMean[i] , 5 ), \
+                "%s" % latexHelper.genInterval( latexHelper.numToTex(rmseTrainBounds[i][0], 5), latexHelper.numToTex(rmseTrainBounds[i][1], 5) ), \
+                "$%s$" % latexHelper.numToTex( medianTestRMSEGeoMean[i] , 5 ), \
+                "%s" % latexHelper.genInterval( latexHelper.numToTex(rmseTestBounds[i][0], 5), latexHelper.numToTex(rmseTestBounds[i][1], 5) ), \
+                ] )
+        #    " & $6.89157\\times10^{-4}\\text{\\ensuremath{\\times}}1.00798{}^{n}$  & 0.0008564  & 0.7600")
+    res += "\\hline \n"
+    res += "\end{tabular} \n"
+    with open(texFileName, "w") as texFile:
+        print >>texFile, res
+
+    return winnerSelectRule
 
 
 def getBootstrapTestRMSEExperimental(preds, bStat, sizes, threshold, modelNames, alpha=95):

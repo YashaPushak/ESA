@@ -30,10 +30,12 @@
 \usepackage{multirow}
 \usepackage{amstext}
 \usepackage{graphicx}
-\usepackage{color}
+\usepackage[usenames, dvipsnames]{color}
 
 \newcommand{\yp}[1]{\textcolor{red}{#1}}
-\newcommand{\bestboot}[1]{\textcolor{blue}{#1}}
+\newcommand{\orange}[1]{\textcolor{BurntOrange}{#1}}
+\newcommand{\evalModels}[1]{\textcolor{green}{#1}}
+\newcommand{\bestBoot}[1]{\textcolor{blue}{#1}}
 
 \newcommand{\medianInterval}[1]{}
 \newcommand{\randomizedAlgorithm}[1]{}
@@ -113,9 +115,13 @@ computed 95\% bootstrap confidence intervals for the performance predictions
 obtained from our scaling models, based on @@numBootstrapSamples@@ bootstrap samples
 per instance set and @@numBootstrapSamples@@ automatically fitted variants of each scaling
 model. 
-\bestboot{To extend this idea, we calculated challenge RMSEs for each of the fitted-models' predictions and the corresponding
-bootstrap samples of the challenge data. We used these bootstrap sample challenge
-RMSEs to calculate 95\% confidence intervals of the challenge RMSE for each model. }
+\bestBoot{To extend this idea, we calculated support and challenge RMSEs for each of the fitted-models' predictions and the corresponding
+bootstrap samples of the observed data. We used these bootstrap sample
+RMSEs to calculate median and 95\% confidence intervals of the support and challenge RMSEs for each model. 
+\medianInterval{In order to handle the unknown running times, we used the geometric means of the @@statistic@@ intervals for each instance size to calculate the median RMSEs.
+However, to better capture both sources of uncertainty for the bootstrap intervals, we calculated the RMSE interval upper and lower bounds by computing 97.5 and 2.5 quantiles
+for the set of upper bounds and the set of lower bounds on the RMSEs, respectively.}
+ }
 \randomizedAlgorithm{Since this analysis was performed on per-instance @@perInstanceStatistic@@s, we also computed these statistics on nested, per-instance bootstrap samples, by first computing @@perInstanceStatistic@@s for @@numPerInstanceBootstrapSamples@@ bootstrap samples for each instance and then randomly selecting one of the per-instance @@perInstanceStatistic@@s when needed.}
 
 
@@ -223,11 +229,13 @@ But how much confidence should we have in these models? Are the RMSEs
 small enough that we should accept them? To answer this question,
 we assessed the fitted models using the bootstrap approach outlined
 in Section~\ref{sec:Methodology}. Table~\ref{tab:Bootstrap-intervals-of-parameters}
-shows the bootstrap intervals of the model parameters,
+shows the bootstrap intervals of the model parameters, 
+\bestBoot{Table~\ref{tab:Bootstrap-model-RMSE} 
+shows the bootstrap intervals of the model prediction RMSEs},
 and Table~\ref{tab:Bootstrap-intervals-support}
 contains the bootstrap intervals for the support data.
 Challenging the models with extrapolation, as shown in 
-\yp{Table~\ref{tab:Bootstrap-intervals-challenge}, it is concluded that
+\evalModels{Table~\ref{tab:Bootstrap-intervals-challenge}, it is concluded that
 @@analysisSummary@@
 (as also illustrated in Figure~\ref{fig:Fitted-models}).
 @@analysisSummaryExplaination@@}
@@ -239,7 +247,27 @@ Challenging the models with extrapolation, as shown in
 \par\end{centering}
 \caption{\label{tab:Bootstrap-intervals-of-parameters} 95\% bootstrap intervals
 of model parameters for the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times}
+
+%Group tables 4 and 5 together. 
+%\end{table*}
+%\begin{table*}[tb]
+\bigskip
+
+\noindent \begin{centering}
+@@table-Bootstrap-model-RMSE@@
+% \input{table_Bootstrap-model-RMSE}
+
+\par\end{centering}
+\caption{\label{tab:Bootstrap-model-RMSE} \bestBoot{Median and 95\% bootstrap intervals
+of model prediction RMSEs for the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times.
+\medianInterval{To calculate the median RMSEs we used the geometric mean of the @@statistic@@s of 
+the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times for each instance size. However, the bootstrap 
+confidence intervals directly capture both sources of uncertainty by reporting the 2.5 and 97.5 
+quantiles of the lower and upper bounds on the RMSEs, respectively.} The models yielding the most 
+accurate predictions (@@winnerSelectRule@@) are shown in boldface. }}
 \end{table*}
+
+
 \begin{table*}[tb]
 \noindent \begin{centering}
 @@table-Bootstrap-intervals-support@@
@@ -252,6 +280,8 @@ The instance sizes shown here are those used for fitting the models.
 Bootstrap intervals on predictions that are weakly consistent
 with the observed point estimates are shown in boldface, 
 those that are consistent are marked by plus signs ({+}),
+those that are strongly consistent are marked
+by sharps ({\#}),
 and those that fully contain the confidence intervals on 
 observations are marked by asterisks ({*}).}
 \end{table*}

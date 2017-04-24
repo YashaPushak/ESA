@@ -11,12 +11,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
  - Nested bootstrapping can be performed to calculate per-instance statistics for randomized algorithms with multiple independent runs on each instance. The user can specify multiple independent runs per instance by adding additional columns with running times to the running time csv file. 
  - There is a new, optional parameter for the configuration.txt file "numRunsPerInstance", which is used to validate that the number of running times provided for each instance matches the specified number. ESA will direct users towards any instances with the wrong number of running times if any exist. If not provided, ESA will automatically identify the correct number and issue a warning if the nuber is inconsistent.
  - More information printed to console to show when bootstrap samples have been made and when models have been fit to them.
- - Challenge RMSE is now reported with a bootstrap confidence interval across the bootstrap samples. The model with the smallest mean (over bootstrap samplse) RMSE is selected as the best fit model. If unknown running times create lower and upper bounds as well for this, then we use the mean (over bootstrap samples) of the lower bounds, since including the upper bounds results in means of infinity.
+ - A new table in the latex report has been added to include support and challenge RMSE medians, and bootstrap confidence intervals across the bootstrap samples. The model with the smallest median (over bootstrap samplse) RMSE is selected as the best fit model. If unknown running times create lower and upper bounds as well for this, then we use the median (over bootstrap samples) of the geometric means of the intervals. If the medians are infinite, then we use the lower bounds of the RMSE to select the best fit model. 
  - Created a change log.
 
 ### Changed
  - Minor refactoring done to improve running time of ESA.
- - The text-based analysis of the fit of the models is now based not only on the fraction of strongly consistent challenge instance sizes, but also the fraction of weakly consistent instance sizes. The exact decision tree used to generate the text has also been slightly modified to properly encorporate this change. Additional details are included in the LaTeX report, which summarize what each descriptive statement means. 
+ - The text-based analysis of the fit of the models is now based not only on the fraction of strongly consistent challenge instance sizes, but also the fraction of weakly consistent instance sizes. The exact decision tree used to generate the text has also been slightly modified to properly encorporate this change. Additional details are included in the LaTeX report and the user guide, which summarize what each descriptive statement means. 
 
 
 ## [1.1] - 2016-11-17

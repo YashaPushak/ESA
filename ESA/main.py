@@ -295,6 +295,7 @@ def evaluateModelsConsistency(modelNames, threshold, statIntervals, obsvLos, obs
             resExplain += "; and "
         elif(num > 0):
             resExplain += "; "
+        num += 1
 
         if(type == 'stronglyConsistent'):
             resExplain += "we say a model fits the data very well if 95\% or more of the predicted bootstrap intervals are strongly consistent with the observed data"
@@ -506,12 +507,19 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
 
     #YP: added a function call to check which model is considered the best
     #fit after the bootstrap sampling
-    (rmseTestBounds, meanTestRMSE) = bootstrapHelper.getBootstrapTestRMSE(preds, bStat, sizes, threshold, modelNames)
+    (rmseTrainBounds, rmseTestBounds, medianTrainRMSEGeoMean, meanTrainRMSEGeoMean, medianTestRMSEGeoMean, meanTestRMSEGeoMean) = bootstrapHelper.getBootstrapRMSE(preds, bStat, sizes, threshold, modelNames)
 
     #print(rmseTests)
     #print(rmseTestBounds)
     #YP: Now we create the fitted model tables.
-    modelFittingHelper.makeTableFittedModels(para, rmseTrains, rmseTestBounds, meanTestRMSE, modelNumParas, modelReps, modelNames, threshold, algName, sizes)
+    modelFittingHelper.makeTableFittedModels(para, rmseTrains, rmseTests, modelNumParas, modelReps, modelNames, threshold, algName, sizes)
+
+
+    #YP: Now we create the bootstrap model RMSE tables (new in ESA v1.1)
+    #Note that we do not currently include the meanTrain/TestRMSEGeoMean values;
+    #however, they could be added at a later time if desired, so we incldue them
+    (tableBootstrapModelRMSEFileName, winnerSelectRule) = bootstrapHelper.makeTableBootstrapModelRMSEs(rmseTrainBounds, rmseTestBounds, medianTrainRMSEGeoMean, meanTrainRMSEGeoMean, medianTestRMSEGeoMean, meanTestRMSEGeoMean, modelNames, algName)
+
 
     #   fit models
     modelFittingHelper.fitModels( algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes, stats, statIntervals, threshold, gnuplotPath, modelFileName)
@@ -525,7 +533,7 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     latexHelper.genTexTableBootstrap( algName, modelNames, sizes, 0, threshold, predLos, predUps, statIntervals, obsvLos, obsvUps, tableBootstrapIntervalsSupportFileName+".tex" )
     latexHelper.genTexTableBootstrap( algName, modelNames, sizes, threshold, len(sizes), predLos, predUps, statIntervals, obsvLos, obsvUps, tableBootstrapIntervalsChallengeFileName+".tex" )
 
-    #   add above data into gnuplot files
+    #   add above data into gnuplot fi0les
     gnuplotHelper.genGnuplotFiles( fileDir, sizes, stats, statIntervals, obsvLos, obsvUps, predLos, predUps, threshold, statistic )
 
     #   generate plots
@@ -543,7 +551,7 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
                 os.system('rm -f ' + logFile + '.log')
 
     #   generate files
-    latexHelper.genTexFile( fileDir, algName, instName, sizes, counts, numInsts, threshold, modelNames, modelOriReps, modelNumParas, numBootstrapSamples, statistic, numRunsPerInstance, perInstanceStatistic, numPerInstanceBootstrapSamples, tableDetailsSupportFileName, tableDetailsChallengeFileName, tableFittedModelsFileName, tableBootstrapIntervalsParaFileName, tableBootstrapIntervalsSupportFileName, tableBootstrapIntervalsChallengeFileName, figureCdfsFileName, figureFittedModelsFileName, figureFittedResiduesFileName, evaluateModelsConsistency(modelNames, threshold, statIntervals, obsvLos, obsvUps, predLos, predUps), latexTemplate )
+    latexHelper.genTexFile( fileDir, algName, instName, sizes, counts, numInsts, threshold, modelNames, modelOriReps, modelNumParas, numBootstrapSamples, statistic, numRunsPerInstance, perInstanceStatistic, numPerInstanceBootstrapSamples, tableDetailsSupportFileName, tableDetailsChallengeFileName, tableFittedModelsFileName, tableBootstrapIntervalsParaFileName, tableBootstrapIntervalsSupportFileName, tableBootstrapIntervalsChallengeFileName, tableBootstrapModelRMSEFileName, winnerSelectRule, figureCdfsFileName, figureFittedModelsFileName, figureFittedResiduesFileName, evaluateModelsConsistency(modelNames, threshold, statIntervals, obsvLos, obsvUps, predLos, predUps), latexTemplate )
     os.system( "pdflatex 'scaling_%s.tex' >& /dev/null < pdflatex_input.txt" % latexHelper.removeSubstrs( algName, '/' ) )
     os.system( "bibtex 'scaling_%s' >& /dev/null < pdflatex_input.txt" %       latexHelper.removeSubstrs( algName, '/' ) )
     os.system( "pdflatex 'scaling_%s.tex' >& /dev/null < pdflatex_input.txt" % latexHelper.removeSubstrs( algName, '/' ) )

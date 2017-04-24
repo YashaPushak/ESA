@@ -14,7 +14,7 @@ def genGnuplotScripts( modelNames, modelDefs, modelNumParas, modelParaDefaults, 
     fitCmd = '''
 #!/gnuplot
 set print "fit-models.log"
-FIT_LIMIT = 1e-9
+#FIT_LIMIT = 1e-9
 '''
     for i in range(0, len(modelNames)):
         paraListStr = ''

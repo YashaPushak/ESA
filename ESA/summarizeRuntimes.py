@@ -50,9 +50,8 @@ def getRuntimesFromFile(dirName, filename, numRunsPerInstance):
     with open(dirName+"/"+filename, 'r') as runtimesFile:
         for line in runtimesFile:
             if line.strip()[0] == '#':
-                if line.strip()[1:10] == 'instances':#YP: I suspect that this entire if statement (and the following one I marked) are not used in practice, but where originally intended for debugging purposes...
-                    #YP: Actually, based on a paper I have just read, I now believe that this is used for handling instances with unknown optimal solution qualities, and hence, lower bounds on median running times. 
-                    #YP: TODO: Investigate this further. 
+                if line.strip()[1:10] == 'instances':
+                    #YP: This is the (soon to be out-dated) method for specifying that there were x number of instances for a particular size, indicating that the running times provided are incomplete. 
                     terms = line.split(",")
                     sizeNumInsts[ int(terms[1]) ] = int(terms[2])
                 continue
@@ -69,8 +68,8 @@ def getRuntimesFromFile(dirName, filename, numRunsPerInstance):
                     runtime = float('inf')
                 #YP: Removed the following two lines so that I can try
                 #fitting to differences in running times
-                #if runtime < 0:
-                #    runtime = float('inf')
+                if runtime < 0:
+                    runtime = float('inf')
                 instRuntimes.append(runtime)
             #Update the number of running times per instance if needed.
             if(numRunsPerInstance == 0):
