@@ -15,6 +15,10 @@ def calStatistic( list, statistic ):
         if percent<1:
             percent *= 100
 
+        for elem in list:
+            if(math.isnan(elem)):
+                return float('NaN')
+
         list = sorted(list)
         I = len(list)*(percent/100.0) - 1
         #Check if I is an integer
@@ -28,7 +32,7 @@ def calStatistic( list, statistic ):
         #This is what Zongxu used to have: 
         #return sorted(list)[ int(len(list)*percent/100)-1 ]
     print('[Error]: Invalid summary statistic input: ' + statistic)
-    raise Exception('Invalid summary statistic input.')
+    raise ValueError('Invalid summary statistic input.')
 
 def calStatisticIntervals( list, statistic, numInsts ):
     if statistic == "mean" or len(list) == numInsts:

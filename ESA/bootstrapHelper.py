@@ -175,9 +175,9 @@ def getBootstrapRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
                 
                 geoMean = (bStat[0][size][j]*bStat[1][size][j])**0.5
                 #Replace NaN with infinity.
-                if(math.isnan(geoMean)):
-                    geoMean = float('inf')
-                seTrains[model][j][1] = (geoMean-predValue)**2
+                #if(math.isnan(geoMean)):
+                #    geoMean = float('inf')
+                seTrains[model][j][1] += (geoMean-predValue)**2
 
                 #calculate an upper bound on the squared error
                 seTrains[model][j][2] += max( (bStat[0][size][j]-predValue)**2, (bStat[1][size][j]-predValue)**2 )
@@ -197,9 +197,9 @@ def getBootstrapRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
                 geoMean = (bStat[0][size][j]*bStat[1][size][j])**0.5
                 #replace NaN with infinity. (This occurs when there are too
                 #many unknown running times bounded by 0 and inf.)
-                if(math.isnan(geoMean)):
-                    geoMean = float('inf')
-                seTests[model][j][1] = (geoMean-predValue)**2
+                #if(math.isnan(geoMean)):
+                #    geoMean = float('inf')
+                seTests[model][j][1] += (geoMean-predValue)**2
                 if(math.isnan(seTests[model][j][1])):
                     print(str(geoMean) + ' ' + str(predValue))                
 
@@ -255,6 +255,17 @@ def getBootstrapRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
         meanTestRMSEGeoMean.append(summarizeRuntimes.calStatistic(geoMeanTestRMSE,'mean'))
 
 
+        print('Train Interval:')
+        print(rmseTrainBounds[model])
+        print('Train Median:')
+        print(medianTrainRMSEGeoMean[model])
+
+        print('Test Interval:')
+        print(rmseTestBounds[model])
+        print('Test Median:')
+        print(medianTestRMSEGeoMean[model])
+
+
     return (rmseTrainBounds, rmseTestBounds, medianTrainRMSEGeoMean, meanTrainRMSEGeoMean, medianTestRMSEGeoMean, meanTestRMSEGeoMean)
     
 
@@ -284,12 +295,15 @@ def genBootstrapModelRMSETexTable(algName, modelNames, rmseTrainBounds, rmseTest
     res += "\\hline \n"
 
     #Calculate the boldfaced winner
-    if(min(medianTestRMSEGeoMean) == float('inf')):
+    if(math.isnan(min(medianTestRMSEGeoMean)) or min(medianTestRMSEGeoMean) == float('inf')):
         winners = []
         for i in range(0, len(modelNames)):
             if(rmseTestBounds[i][0] == min(rmseTestBounds)[0]):
                 winners.append(i)
-        winnerSelectRule = "as per challenge RMSE lower bounds, since the medians are censored"
+        if(min(medianTestRMSEGeoMean) == float('inf')):
+            winnerSelectRule = "as per challenge RMSE lower bounds, since the medians are infinity"
+        else:
+            winnerSelectRule = "as per challenge RMSE lower bounds, since the medians are undefined"
     else:
         winners = []
         for i in range(0,len(modelNames)):

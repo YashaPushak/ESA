@@ -32,6 +32,7 @@
 \usepackage{graphicx}
 \usepackage[usenames, dvipsnames]{color}
 
+\newcommand{\updatedYP}[1]{\textcolor{Purple}{#1}}
 \newcommand{\yp}[1]{\textcolor{red}{#1}}
 \newcommand{\orange}[1]{\textcolor{BurntOrange}{#1}}
 \newcommand{\evalModels}[1]{\textcolor{green}{#1}}
@@ -100,8 +101,7 @@ there is uncertainty about the
 precise location of the @@statistic@@s of the running time distributions
 at each such $n$, and we can only provide bounds on
 those @@statistic@@s instead. Closely following \cite{dubois2015on}, we calculate
-these bounds based on the best
-and worst case scenarios, in which all instances with unknown running times
+these bounds based on the best-and worst-case scenarios, in which all instances with unknown running times
 are easiest or hardest, respectively.
 We note that these are not confidence
 intervals, since we can guarantee the actual @@statistic@@ running
@@ -115,30 +115,34 @@ computed 95\% bootstrap confidence intervals for the performance predictions
 obtained from our scaling models, based on @@numBootstrapSamples@@ bootstrap samples
 per instance set and @@numBootstrapSamples@@ automatically fitted variants of each scaling
 model. 
-\bestBoot{To extend this idea, we calculated support and challenge RMSEs for each of the fitted-models' predictions and the corresponding
+\bestBoot{To extend this idea, we calculated support and challenge RMSEs for each of the fitted models' predictions and the corresponding
 bootstrap samples of the observed data. We used these bootstrap sample
 RMSEs to calculate median and 95\% confidence intervals of the support and challenge RMSEs for each model. 
 \medianInterval{In order to handle the unknown running times, we used the geometric means of the @@statistic@@ intervals for each instance size to calculate the median RMSEs.
 However, to better capture both sources of uncertainty for the bootstrap intervals, we calculated the RMSE interval upper and lower bounds by computing 97.5 and 2.5 quantiles
-for the set of upper bounds and the set of lower bounds on the RMSEs, respectively.}
- }
+for the set of upper bounds and the set of lower bounds on the RMSEs, respectively.}}
 \randomizedAlgorithm{Since this analysis was performed on per-instance @@perInstanceStatistic@@s, we also computed these statistics on nested, per-instance bootstrap samples, by first computing @@perInstanceStatistic@@s for @@numPerInstanceBootstrapSamples@@ bootstrap samples for each instance and then randomly selecting one of the per-instance @@perInstanceStatistic@@s when needed.}
 
 
-In the following, we say that a scaling model is in-
-consistent with observed data if the bootstrap confidence interval for the observed data
+\updatedYP{
+In the following, we say that a scaling model prediction is in-consistent 
+with observed data if the bootstrap confidence interval for the observed data
 is disjoint from the bootstrap confidence interval for
-predicted running times; 
-\medianInterval{we say that a scaling model is consistent 
-with observed data, if the interval for observed @@statistic@@s
-overlaps with, but is not fully contained within the
-bootstrap confidence interval for predicted running times;}
+predicted @@statistic@@ \randomizedAlgorithm{of per-instance 
+@@perInstanceStatistic@@}
+ running times; we say that a scaling model prediction is weakly consistent 
+with the observed data if the bootstrap confidence interval for the prediction overlaps with the bootstrap confidence interval for the observed data;
+\medianInterval{we say that a scaling model prediction is consistent 
+with observed data, if the interval for observed @@statistic@@ \randomizedAlgorithm{of per-instance @@perInstanceStatistic@@} running times
+overlaps with the
+bootstrap confidence interval for predicted running times;} and,
 we say that a scaling model is strongly consistent with observed
-data, if the observed median is fully contained
+data, if the observed @@statistic@@ \randomizedAlgorithm{of per-instance @@perInstanceStatistic@@s} is fully contained
 within the bootstrap confidence interval for predicted
-running times.
-Also, we define residue of a model at a given size as the observed 
+running times.}
+Also, we define the residue of a model at a given size as the observed 
 point estimate less the predicated value.
+
 
 \section{Dataset Description}
 
@@ -152,7 +156,7 @@ and \ref{tab:Details-dataset-challenge}.
 @@table-Details-dataset-support@@
 \par\end{centering}
 
-\caption{\label{tab:Details-dataset-support} Details of the running time dataset used as support data for model fitting. \randomizedAlgorithm{The statistics reported are statistics of the per-instance @@perInstanceStatistic@@ running times.}}
+\caption{\label{tab:Details-dataset-support} Details of the running time dataset used as support data for model fitting. \randomizedAlgorithm{The reported statistics are of the per-instance @@perInstanceStatistic@@ running times.}}
 \end{table*}
 
 \begin{table*}
@@ -160,7 +164,7 @@ and \ref{tab:Details-dataset-challenge}.
 @@table-Details-dataset-challenge@@
 \par\end{centering}
 
-\caption{\label{tab:Details-dataset-challenge} Details of the running time dataset used as challenge data for model fitting. \randomizedAlgorithm{The statistics reported are statistics of the per-instance @@perInstanceStatistic@@ running times.}}
+\caption{\label{tab:Details-dataset-challenge} Details of the running time dataset used as challenge data for model fitting. \randomizedAlgorithm{The reported statistics are of the per-instance @@perInstanceStatistic@@ running times.}}
 \end{table*}
 
 % 
@@ -195,7 +199,7 @@ challenge data, shown in Table~\ref{tab:Fitted-models}.
 \par\end{centering}
 
 \caption{\label{tab:Fitted-models}Fitted models of the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times and RMSE
-values (in CPU sec). The models yielding more
+values (in CPU sec). The models yielding the most
 accurate predictions (as per RMSEs on challenge data) are shown in
 boldface.}
 \end{table}
@@ -260,7 +264,7 @@ of model parameters for the @@statistic@@s of the \randomizedAlgorithm{per-insta
 \par\end{centering}
 \caption{\label{tab:Bootstrap-model-RMSE} \bestBoot{Median and 95\% bootstrap intervals
 of model prediction RMSEs for the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times.
-\medianInterval{To calculate the median RMSEs we used the geometric mean of the @@statistic@@s of 
+\medianInterval{To calculate the median RMSEs we used the geometric mean of the intervals for the @@statistic@@s of 
 the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times for each instance size. However, the bootstrap 
 confidence intervals directly capture both sources of uncertainty by reporting the 2.5 and 97.5 
 quantiles of the lower and upper bounds on the RMSEs, respectively.} The models yielding the most 
@@ -317,18 +321,18 @@ behaviour of @@algName@@ on @@instName@@. We found
 \bibitem{dubois2015on}
 J{\'e}r{\'e}mie Dubois-Lacoste, Holger~H. Hoos, and Thomas St{\"u}tzle.
 \newblock On the empirical scaling behaviour of state-of-the-art local search
-  algorithms for the euclidean tsp.
-\newblock In {\em GECCO}. ACM, 2015.
+  algorithms for the {E}uclidean {TSP}.
+\newblock In {\em Proceedings of the 17th Genetic and Evolutionary Computation Conference}, (GECCO '15), pages 377--384, 2015.
 
 \bibitem{hoos2009bootstrap}
-Holger~H Hoos.
+Holger~H. Hoos.
 \newblock A bootstrap approach to analysing the scaling of empirical run-time
   data with problem size.
-\newblock Technical report, Technical Report TR-2009-16, University of British
+\newblock Technical report, Technical Report TR-2009-16, Department of Computer Science, University of British
   Columbia, 2009.
 
 \bibitem{hoos2014empirical}
-Holger~H Hoos and Thomas St{\"u}tzle.
+Holger~H. Hoos and Thomas St{\"u}tzle.
 \newblock On the empirical scaling of run-time for finding optimal solutions to
   the travelling salesman problem.
 \newblock {\em European Journal of Operational Research}, 238(1):87--94, 2014.
