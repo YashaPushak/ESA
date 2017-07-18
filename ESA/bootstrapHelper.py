@@ -6,7 +6,7 @@ import summarizeRuntimes
 import csvHelper
 import latexHelper
 
-def doBootstrap(data, numInsts, numSamples, statistic, perInstanceStatistic, numSamplesPerInstance):
+def doBootstrap(logger, data, numInsts, numSamples, statistic, perInstanceStatistic, numSamplesPerInstance):
     #Author: Zongxu Mu, Yasha Pushak
     #Last updated: February 7th, 2017
     #For the bootstrap samples of statistics of nested bootstrap samples
@@ -29,7 +29,7 @@ def doBootstrap(data, numInsts, numSamples, statistic, perInstanceStatistic, num
                         p = random.randrange(0,len(data[size][inst]))
                         bTmpInstData.append(data[size][inst][p])
                     bData[size][inst].append(summarizeRuntimes.calStatistic( bTmpInstData, perInstanceStatistic))
-            print('Nested bootstrap samples for ' + str(size+1) + ' instance sizes made...')
+            logger.info('Nested bootstrap samples for ' + str(size+1) + ' instance sizes made...')
     else:
         #bootstrap samples will all be degenerate here, so there's no use
         #in making any.
@@ -50,7 +50,7 @@ def doBootstrap(data, numInsts, numSamples, statistic, perInstanceStatistic, num
             bStat[0][j].append( summarizeRuntimes.calStatistic( bTmpData+[ 0 for ind in range(0, size-len(bTmpData)) ], statistic ) )
             bStat[1][j].append( summarizeRuntimes.calStatistic( bTmpData+[ float('inf') for ind in range(0, size-len(bTmpData)) ], statistic ) )
         if(i%10 == 9):
-            print(str(i+1) + " bootstrap samples made...")
+            logger.info(str(i+1) + " bootstrap samples made...")
     return bStat
 
 def getBootstrapIntervals(bStat, alpha=95):
@@ -61,9 +61,11 @@ def getBootstrapIntervals(bStat, alpha=95):
     ups = [ summarizeRuntimes.calStatistic(d, "Q%f"%(50+alpha/2.0)) for d in bStat[1] ]
     return (los, ups)
 
-def doBootstrapAnalysis(bStat, sizes, data, threshold, statistic, modelNames, modelNumParas, modelFuncs, numSamples, gnuplotPath, alpha=95):
+def doBootstrapAnalysis(logger, bStat, sizes, data, threshold, statistic, modelNames, modelNumParas, modelFuncs, numSamples, gnuplotPath, alpha=95):
     #bStat = doBootstrap(data, numInsts, numSamples, statistic, perInstanceStatistic)[0]
-    print "bStat: %d x %d" % ( len(bStat), len(bStat[0]) )
+    logger.debug("bStat size: %d x %d" % ( len(bStat), len(bStat[0]) ))
+
+    warningCount = 0
 
     owd = os.getcwd()
     os.chdir("bootstrap")
@@ -75,8 +77,19 @@ def doBootstrapAnalysis(bStat, sizes, data, threshold, statistic, modelNames, mo
         for j in range(0, len(data)):
             runtimes.append( bStat[j][i] )
         summarizeRuntimes.genGnuplotFiles(".", sizes, runtimes, threshold, statistic)
-        os.system(gnuplotPath + "gnuplot bootstrap-fit.plt >& /dev/null")
-        
+        os.system(gnuplotPath + "gnuplot bootstrap-fit.plt >& fit.log")
+        with open('fit.log') as f_fit:
+            fileText = f_fit.read()
+            if('No such file or directory' in fileText):
+                logger.error('Unable to run gnuplot.')
+                logger.error('Please ensure gnuplot is in your path, or verify that you have correctly entered the path in the configuration file using the \'gnuplotPath\' variable.')
+                raise Exception("Gnuplot not found")
+            elif('After 1 iterations the fit converged' in fileText):
+                warningCount += 1
+                if(warningCount < 10):
+                    failedModel = fileText.split('After 1 iterations the fit converged')[0].split('lambda')[-1].split('_p0')[0].strip()
+                    logger.warning('The ' + failedModel + ' model converged after only 1 iteration. This is often a sign that the model is a very bad fit for the data (or that the default fitting parameters you choose were very good).') 
+ 
         with open("fit-models.log") as fitsFile:
             #YP: added in counting stuff
             count = 0 
@@ -87,11 +100,14 @@ def doBootstrapAnalysis(bStat, sizes, data, threshold, statistic, modelNames, mo
                 if terms[0].split()[1].strip() == "fit":
                     print >>files[k], terms[1].strip()
             if(not count == len(modelNames)):
-                raise Exception('Error, gnuplot failed to fit all of the models')
+                raise Exception('Error, gnuplot failed to fit all of the models for one of the bootstrap samples.')
         if i%10 == 9:
-            print "%d models fitted to bootstrap samples..." % (i+1)
+            logger.info("%d models fitted to bootstrap samples..." % (i+1))
     for file in files:
         file.close()
+
+    if(warningCount > 10):
+        logger.warning(str(warningCount - 10) + ' addition warnings about models converging after 1 iteration suppressed.')
 
     os.chdir(owd)
     return readBootstrapDatFile( modelNames, modelNumParas, modelFuncs, sizes )
@@ -200,8 +216,8 @@ def getBootstrapRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
                 #if(math.isnan(geoMean)):
                 #    geoMean = float('inf')
                 seTests[model][j][1] += (geoMean-predValue)**2
-                if(math.isnan(seTests[model][j][1])):
-                    print(str(geoMean) + ' ' + str(predValue))                
+                #if(math.isnan(seTests[model][j][1])):
+                #    print(str(geoMean) + ' ' + str(predValue))                
 
                 #calculate an upper bound on the squared error
                 seTests[model][j][2] += max( (bStat[0][size][j]-predValue)**2, (bStat[1][size][j]-predValue)**2 )
@@ -255,15 +271,15 @@ def getBootstrapRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
         meanTestRMSEGeoMean.append(summarizeRuntimes.calStatistic(geoMeanTestRMSE,'mean'))
 
 
-        print('Train Interval:')
-        print(rmseTrainBounds[model])
-        print('Train Median:')
-        print(medianTrainRMSEGeoMean[model])
+        #print('Train Interval:')
+        #print(rmseTrainBounds[model])
+        #print('Train Median:')
+        #print(medianTrainRMSEGeoMean[model])
 
-        print('Test Interval:')
-        print(rmseTestBounds[model])
-        print('Test Median:')
-        print(medianTestRMSEGeoMean[model])
+        #print('Test Interval:')
+        #print(rmseTestBounds[model])
+        #print('Test Median:')
+        #print(medianTestRMSEGeoMean[model])
 
 
     return (rmseTrainBounds, rmseTestBounds, medianTrainRMSEGeoMean, meanTrainRMSEGeoMean, medianTestRMSEGeoMean, meanTestRMSEGeoMean)
@@ -533,3 +549,48 @@ def getBootstrapTestRMSEExperimental(preds, bStat, sizes, threshold, modelNames,
     print('The winner is: ' + modelNames[winner])
 
     return (rmseTestBounds, medianMeanRMSE) 
+
+
+def getRelativeRMSEsAndIntervals(testRMSE,stats,obsvLos,obsvUps,predLos,predUps,threshold,sizes,modelNames):
+    #Author: Yasha Pushak
+    #First Created: July 6th, 2017
+    #Some additional experimental analysis to compare the size of the RMSE
+    #relative to the mean challenge running time and to compare the size
+    #Of the predicted and observed bootstrap intervals relative to the
+    #challenge running times.
+
+    meanStat = sum(stats[threshold:])/(len(stats[threshold:]))
+    
+    intervalSize = []
+    meanIntervalSize = []
+
+    
+    for k in range(0,len(predLos)):
+        intervalSize.append([])
+        #print(modelNames[k])
+        for s in range(0,len(sizes)):
+            #print(str(sizes[s]) + ': ' + str(predUps[k][s]) + ' - ' + str(predLos[k][s]))
+            intervalSize[k].append((predUps[k][s] - predLos[k][s])/stats[s])
+        meanIntervalSize.append(sum(intervalSize[k][threshold:])/len(intervalSize[k][threshold:]))
+
+    obsvIntSize = []
+    for s in range(0,len(sizes)):
+        obsvIntSize.append((obsvUps[s] - obsvLos[s])/stats[s])
+
+    with open('table_RMSEs-and-intervals.csv','w') as f_out:
+        f_out.write('#The median RMSE is across bootstrap samples. Here we are using the medianTestRMSEGeoMean. The mean observed statistic is the mean of the observed points estimates for the running times.\n')
+        f_out.write('#, [median RMSE]/[mean observed statistic], mean relative interval size')
+        for s in range(threshold,len(sizes)):
+            f_out.write(', relative interval size n=' + str(sizes[s]))
+        f_out.write('\n')
+        for k in range(0,len(predLos)):
+            f_out.write(modelNames[k] + ', ' + str(testRMSE[k]/meanStat) + ', ' + str(meanIntervalSize[k]))
+            for s in range(threshold,len(sizes)):
+                f_out.write(', ' + str(intervalSize[k][s]))
+            f_out.write('\n')
+        
+        f_out.write('Observed data, 0, ' + str(sum(obsvIntSize[threshold:])/len(obsvIntSize[threshold:])))
+        for s in range(threshold,len(sizes)):
+            f_out.write(', ' + str(obsvIntSize[s]))
+        f_out.write('\n')
+        

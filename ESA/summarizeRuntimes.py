@@ -31,8 +31,7 @@ def calStatistic( list, statistic ):
         #the quantiles. I have changed this..
         #This is what Zongxu used to have: 
         #return sorted(list)[ int(len(list)*percent/100)-1 ]
-    print('[Error]: Invalid summary statistic input: ' + statistic)
-    raise ValueError('Invalid summary statistic input.')
+    raise ValueError('Invalid summary statistic input: ' + statistic)
 
 def calStatisticIntervals( list, statistic, numInsts ):
     if statistic == "mean" or len(list) == numInsts:
@@ -40,7 +39,7 @@ def calStatisticIntervals( list, statistic, numInsts ):
     else:
         return [ calStatistic( list+[ 0 for i in range(0, numInsts-len(list)) ], statistic ), calStatistic( list+[ float('inf') for i in range(0, numInsts-len(list)) ], statistic ) ]
 
-def getRuntimesFromFile(dirName, filename, numRunsPerInstance):
+def getRuntimesFromFile(logger, dirName, filename, numRunsPerInstance):
     #YP: Added a warning count.
     numWarning = 0
     sizes = []
@@ -72,6 +71,7 @@ def getRuntimesFromFile(dirName, filename, numRunsPerInstance):
                     runtime = float('inf')
                 #YP: Removed the following two lines so that I can try
                 #fitting to differences in running times
+                #print('[WARNING]: Negative running times are allowed right now, remove this before publishing!')
                 if runtime < 0:
                     runtime = float('inf')
                 instRuntimes.append(runtime)
@@ -84,15 +84,15 @@ def getRuntimesFromFile(dirName, filename, numRunsPerInstance):
                 if(not updatedNumRunsPerInstance):
                     numWarning += 1
                     if(numWarning <= maxWarnings):
-                        print('[Warning]: Instance ' + terms[0] + ' has ' + str(len(instRuntimes)) + ' running times and not the specified ' + str(numRunsPerInstance) + ' running times. We are ignoring the discrepency and continuing; however, per-instance statistics for this instance will be based on the ' + str(len(instRuntimes)) + ' running times, rather than ' + str(numRunsPerInstance))
+                        logger.warning('Instance ' + terms[0] + ' has ' + str(len(instRuntimes)) + ' running times and not the specified ' + str(numRunsPerInstance) + ' running times. We are ignoring the discrepency and continuing; however, per-instance statistics for this instance will be based on the ' + str(len(instRuntimes)) + ' running times, rather than ' + str(numRunsPerInstance))
                 else:
-                    print('[Warning]: Number of independent runs per instance (numRunsPerInstance) was not specified and the number of running times provided is not consistent across all instances. We are ignoring the discrepency and continuing. The per-instance statistics for each instance will be based on the number of available running times.')
+                    logger.warning('Number of independent runs per instance (numRunsPerInstance) was not specified and the number of running times provided is not consistent across all instances. We are ignoring the discrepency and continuing. The per-instance statistics for each instance will be based on the number of available running times.')
                 numRunsPerInstance = 'multiple'
 
             sizeRuntimes[ int(float(terms[1])) ].append( instRuntimes )
     
     if(numWarning - maxWarnings > 0):
-        print('[Warning]: ' + str(numWarning - 10) + ' similar warnings suppressed.')
+        logger.warning(str(numWarning - 10) + ' other running time file warnings suppressed.')
 
     for size in sorted( sizeRuntimes ):
         sizes.append(size)

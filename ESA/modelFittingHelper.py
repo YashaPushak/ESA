@@ -50,13 +50,20 @@ def genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes
     with open(texFileName, "w") as texFile:
         print >>texFile, res
 
-def fitModels( algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes, medians, medianIntervals, threshold, gnuplotPath, modelFileName ):
+def fitModels(logger, algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes, medians, medianIntervals, threshold, gnuplotPath, modelFileName ):
     #YP: added some extra exception handling and error checking in case
     #gnuplot is unavailable
     os.system(gnuplotPath + "gnuplot fitModels.plt >& fit.log")
     with open('fit.log') as f_fit:
-        if('No such file or directory' in f_fit.read()):
-            print('[ERROR]: Unable to run gnuplot.')
+        fileText = f_fit.read()
+        if('No such file or directory' in fileText):
+            logger.error('Unable to run gnuplot.')
+            logger.error('Please ensure gnuplot is in your path, or verify that you have correctly entered the path in the configuration file using the \'gnuplotPath\' variable.')
+            raise Exception("Gnuplot not found")
+        elif('After 1 iterations the fit converged' in fileText):
+            failedModel = fileText.split('After 1 iterations the fit converged')[0].split('lambda')[-1].split('_p0')[0].strip()
+            logger.warning('The ' + failedModel + ' model converged after only 1 iteration. This is often a sign that the model is a very bad fit for the data (or that the default fitting parameters you choose were very good).')
+
     para = []
     for k in range(0, len(modelNames)):
         para.append( [] )
@@ -69,18 +76,18 @@ def fitModels( algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes,
                     values = terms[1].split()
                     para[k] = [ float(v) for v in values ]
     except Exception:
-        print "[ERROR]: Model fitting failed! Please check to make sure gnuplot is installed correctly, or try specifying the directory containing gnuplot configurations.txt using the gnuplotPath variable. (see fit.log for more details about the error message.)"
-        sys.exit(1)
+        logger.error("Model fitting failed! Please check to make sure gnuplot is installed correctly, or try specifying the directory containing gnuplot configurations.txt using the gnuplotPath variable. (see fit.log for more details about the error message.)")
+        system.exit(-1)
 
     #YP: fixed check to ensure that all of the models were fit correctly and updated the error
     #message to include information about which model failed to fit and how to fix it.
     for k in range(0, len(modelNames)):
         if len(para[k]) == 0:
-            print "[ERROR]: Model fitting failed for the " + modelNames[k] + " model!"
-            print "[ERROR]: This is often due to poor default fitting parameters; however, you can find more information in 'fit.log'."
-            print "[ERROR]: Please try updating the initial values for the " + modelNames[k] + " model parameters in " + modelFileName + "."
-            print "[ERROR]: Ideally these values should be within one order of magnitude of their fitted values."
-            sys.exit(1)
+            logger.error("Model fitting failed for the " + modelNames[k] + " model!")
+            logger.error("This is often due to poor default fitting parameters; however, you can find more information in 'fit.log'.")
+            logger.error("Please try updating the initial values for the " + modelNames[k] + " model parameters in " + modelFileName + ".")
+            logger.error("Ideally these values should be within one order of magnitude of their fitted values.")
+            sys.exit(-1)
     seTrains = []
     seTests = []
     for k in range(0, len(modelNames)):

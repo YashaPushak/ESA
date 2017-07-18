@@ -9,6 +9,8 @@ def prepareTableRow(rowname, contents):
 
 def bold(string, math=False):
     if math == True:
+        if("\\text{N/A}" in string):
+            string = string.replace('\\text{N/A}','\\text{\\textbf{N/A}}')
         if string.find('$') > -1:
             return "$\\mathbf{"+string[string.find('$')+1:string.rfind('$')]+"}$"
         else:
@@ -18,7 +20,7 @@ def bold(string, math=False):
     
 def numToTex(num, precision, scientific=False):
     if math.isnan(num):
-        return "N/A"
+        return "\\text{N/A}"
     if num==float('inf'):
         return "\\infty "
     if -num==float('inf'):
@@ -64,13 +66,13 @@ def getSizesStr(sizes, stIdx, edIdx):
 
 def calConsistencyLevel(predLo, predUp, statIntervals, obsvLo, obsvUp):
     if predLo<=obsvLo and obsvUp<=predUp:
-        return 4    # Fully Contained
-    elif (predLo<=statIntervals[0] and statIntervals[1]<=predUp):
-        return 3    # Strongly Consistent
-    elif max(predLo, statIntervals[0]) <= min(predUp, statIntervals[1]):
-        return 2    # Consistent
+        return 4    # Fully Contained, i.e., the new Strongly Consistent
+        #elif (predLo<=statIntervals[0] and statIntervals[1]<=predUp):
+        #    return 3    # Strongly Consistent
+        #elif max(predLo, statIntervals[0]) <= min(predUp, statIntervals[1]):
+        #    return 2    # Consistent
     elif max(predLo, obsvLo) <= min(predUp, obsvUp):
-        return 1    # Weekly Consistent
+        return 1    # Weakly Consistent
     else:
         return 0
 

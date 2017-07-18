@@ -127,17 +127,17 @@ for the set of upper bounds and the set of lower bounds on the RMSEs, respective
 \updatedYP{
 In the following, we say that a scaling model prediction is in-consistent 
 with observed data if the bootstrap confidence interval for the observed data
-is disjoint from the bootstrap confidence interval for
+is disjoint from the bootstrap confidence interval for the
 predicted @@statistic@@ \randomizedAlgorithm{of per-instance 
 @@perInstanceStatistic@@}
  running times; we say that a scaling model prediction is weakly consistent 
 with the observed data if the bootstrap confidence interval for the prediction overlaps with the bootstrap confidence interval for the observed data;
-\medianInterval{we say that a scaling model prediction is consistent 
-with observed data, if the interval for observed @@statistic@@ \randomizedAlgorithm{of per-instance @@perInstanceStatistic@@} running times
-overlaps with the
-bootstrap confidence interval for predicted running times;} and,
-we say that a scaling model is strongly consistent with observed
-data, if the observed @@statistic@@ \randomizedAlgorithm{of per-instance @@perInstanceStatistic@@s} is fully contained
+%\medianInterval{we say that a scaling model prediction is consistent 
+%with observed data, if the interval for observed @@statistic@@ \randomizedAlgorithm{of per-instance @@perInstanceStatistic@@} running times
+%overlaps with the
+%bootstrap confidence interval for predicted running times;} 
+and, we say that a scaling model is strongly consistent with observed
+data, if the bootstrap confidence interval for the observed @@statistic@@ \randomizedAlgorithm{of per-instance @@perInstanceStatistic@@s} is fully contained
 within the bootstrap confidence interval for predicted
 running times.}
 Also, we define the residue of a model at a given size as the observed 
@@ -282,12 +282,12 @@ accurate predictions (@@winnerSelectRule@@) are shown in boldface. }}
 for the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running time predictions and observed running times on @@instName@@. 
 The instance sizes shown here are those used for fitting the models.
 Bootstrap intervals on predictions that are weakly consistent
-with the observed point estimates are shown in boldface, 
-those that are consistent are marked by plus signs ({+}),
-those that are strongly consistent are marked
-by sharps ({\#}),
-and those that fully contain the confidence intervals on 
-observations are marked by asterisks ({*}).}
+with the observed point estimates are shown in boldface 
+%\medianInterval{those that are consistent are marked by plus signs ({+}),}
+and those that are strongly consistent are marked
+by asterisks ({*}).}
+%and those that fully contain the confidence intervals on 
+%observations are marked by asterisks ({*}).}
 \end{table*}
 
 \begin{table*}[tb]
@@ -300,12 +300,12 @@ observations are marked by asterisks ({*}).}
 for the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running time predictions and observed running times on @@instName@@. 
 The instance sizes shown here are larger than those used for fitting the models.
 Bootstrap intervals on predictions that are weakly consistent
-with the observed data are shown in boldface,
-\medianInterval{those that are consistent are marked by plus signs ({+}),}
-those that are strongly consistent are marked
-by sharps ({\#}),
-and those that fully contain the confidence intervals on 
-observations are marked by asterisks ({*}).}
+with the observed data are shown in boldface
+%\medianInterval{those that are consistent are marked by plus signs ({+}),}
+and those that are strongly consistent are marked
+by asterisks ({*}).}
+%and those that fully contain the confidence intervals on 
+%observations are marked by asterisks ({*}).}
 \end{table*}
 
 

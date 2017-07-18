@@ -7,6 +7,7 @@ import bootstrapHelper
 import csvHelper
 import gnuplotHelper
 import latexHelper
+import logging
 
 #def inputDefToPythonDef( md ):
 #    idx = md.find( 'p', 0 )
@@ -43,7 +44,7 @@ def inputModelToInternal( instr, inPython ):
             instr = instr[0:stIdx] + ("p%d" % (ord(id)-ord('a'))) + instr[edIdx:]
     return instr
 
-def getModels( fileDir, fileName, toModifyModelDefaultParas, sizes, stats, threshold ):
+def getModels(logger, fileDir, fileName, toModifyModelDefaultParas, sizes, stats, threshold ):
     modelNames = []
     modelNumParas = []
     modelReps = []
@@ -56,6 +57,7 @@ def getModels( fileDir, fileName, toModifyModelDefaultParas, sizes, stats, thres
             terms = line.split(",")
             if len(terms)>5:
                 modelNames.append( terms[0].strip() )
+                logging.debug('Parsing ' + modelNames[-1] + ' model.')
                 modelNumParas.append( int(terms[1]) )
                 modelReps.append( terms[2].strip() )
                 modelDefs.append( inputModelToInternal( terms[3].strip(), True ) )
@@ -63,6 +65,7 @@ def getModels( fileDir, fileName, toModifyModelDefaultParas, sizes, stats, thres
                 modelParaDefaults.append( [] )
                 y1 = float(stats[threshold-1])
                 y0 = float(stats[0])
+                #print(threshold)
                 x1 = float(sizes[threshold-1])
                 x0 = float(sizes[0])
                 #print(x1)
@@ -78,7 +81,7 @@ def getModels( fileDir, fileName, toModifyModelDefaultParas, sizes, stats, thres
                     #b = ( stats[threshold]/stats[threshold-1] ) ** ( 1.0 / ( sizes[threshold]-sizes[threshold-1] ) )
                     #a = stats[threshold]/(b**sizes[threshold])
                     #b = 1+(b-1)/2
-                    print "Replacing %s model parameters as (%f, %f)" % (modelNames[-1], a, b)
+                    logger.info("Replacing %s model parameters as (%f, %f)" % (modelNames[-1], a, b))
                     modelParaDefaults[-1].append( a )
                     modelParaDefaults[-1].append( b )
                 elif toModifyModelDefaultParas and modelNames[-1].lower() == "rootexp" or modelNames[-1].lower() == "root-exponential" or modelNames[-1].lower == "sqrtexp":
@@ -91,7 +94,7 @@ def getModels( fileDir, fileName, toModifyModelDefaultParas, sizes, stats, thres
                     #b = ( stats[threshold]/stats[threshold-1] ) ** ( 1.0 / ( math.sqrt(sizes[threshold])-math.sqrt(sizes[threshold-1]) ) )
                     #a = stats[threshold] / (b**math.sqrt(sizes[threshold]))
                     #b = 1+(b-1)/2
-                    print "Replacing %s model parameters as (%f, %f)" % (modelNames[-1], a, b)
+                    logger.info("Replacing %s model parameters as (%f, %f)" % (modelNames[-1], a, b))
                     modelParaDefaults[-1].append( a )
                     modelParaDefaults[-1].append( b )
                 elif toModifyModelDefaultParas and modelNames[-1].lower() == "poly" or modelNames[-1].lower() == "polynomial":
@@ -104,7 +107,7 @@ def getModels( fileDir, fileName, toModifyModelDefaultParas, sizes, stats, thres
                     #b = ( math.log(stats[threshold]) - math.log(stats[threshold-1]) ) / ( math.log(sizes[threshold]) - math.log(sizes[threshold-1]) )
                     #a = stats[threshold] / (sizes[threshold] ** b)
                     #b = min(1, b/2)
-                    print "Replacing %s model parameters as (%f, %f)" % (modelNames[-1], a, b)
+                    logger.info("Replacing %s model parameters as (%f, %f)" % (modelNames[-1], a, b))
                     modelParaDefaults[-1].append( a )
                     modelParaDefaults[-1].append( b )
                 else:
@@ -186,12 +189,14 @@ def evaluateModels( modelNames, threshold, statIntervals, predLos, predUps ):
 
 
 
-def evaluateModelsConsistency(modelNames, threshold, statIntervals, obsvLos, obsvUps, predLos, predUps):
+def evaluateModelsConsistency(logger, modelNames, threshold, statIntervals, obsvLos, obsvUps, predLos, predUps):
     #Author: Yasha Pushak
     #Last updated: April 5th, 2017
     #I am creating a third method for analysing the consistency of the data to create a text-based description. Unlike the original, this one
     #counts the number of instance sizes for which model predictions are both strongly and weakly consistent (instead of just strongly consistent)
     #with the observed data. 
+
+    logger.debug('Interpretating results of scaling model fits.')
 
     types = set([])
     intervalsData = []
@@ -225,7 +230,7 @@ def evaluateModelsConsistency(modelNames, threshold, statIntervals, obsvLos, obs
                 numWeaklyWithinIntervals += 1
                 if size>=largerHalfIdx:
                     numWeaklyWithinIntervalsLarger += 1
-                if statIntervals[size][1] >= predLos[k][size] and statIntervals[size][0] <= predUps[k][size]:
+                if obsvLos[size] >= predLos[k][size] and obsvUps[size] <= predUps[k][size]:
                     numStronglyWithinIntervals += 1
                     if size>=largerHalfIdx:
                         numStronglyWithinIntervalsLarger += 1
@@ -239,20 +244,12 @@ def evaluateModelsConsistency(modelNames, threshold, statIntervals, obsvLos, obs
         perWeaklyConsistent = 1.0*numWeaklyWithinIntervals/(len(statIntervals)-threshold)
         perWeaklyConsistentLarger = 1.0*numWeaklyWithinIntervalsLarger/(len(statIntervals)-largerHalfIdx)
 
-        #print("Percentage above intervals for model " + modelNames[k])
-        #print perAboveIntervals
-        #print perAboveIntervalsLarger
-        #print("Percentage below intervals for model " + modelNames[k])
-        #print perBelowIntervals
-        #print perBelowIntervalsLarger
-        #print("Percentage strongly consistent for model " + modelNames[k])
-        #print perStronglyConsistent
-        #print perStronglyConsistentLarger
-        #print("Percentage weakly consistent for model " + modelNames[k])
-        #print perWeaklyConsistent
-        #print perWeaklyConsistentLarger
+        logger.debug("Percentage above intervals for model " + modelNames[k] + ' - all: ' + str(perAboveIntervals) + '; larger: ' + str(perAboveIntervalsLarger))
+        logger.debug("Percentage below intervals for model " + modelNames[k]+ ' - all: ' + str(perBelowIntervals) + '; larger: ' + str(perBelowIntervalsLarger))
+        logger.debug("Percentage strongly consistent for model " + modelNames[k] + ' - all: ' + str(perStronglyConsistent)+ '; larger: ' + str(perStronglyConsistentLarger))
+        logger.debug("Percentage weakly consistent for model " + modelNames[k] + ' - all: ' + str(perWeaklyConsistent) + '; larger: ' + str(perWeaklyConsistentLarger))
 
-        if(perStronglyConsistent >= 0.95):
+        if(perStronglyConsistent >= 0.90 or (perStronglyConsistentLarger >= 0.90 and perWeaklyConsistent >= 0.90)):
             res += "the %s model fits the data very well" % modelNames[k]
             types.add('stronglyConsistent')
         elif(perWeaklyConsistent >= 0.90 or perWeaklyConsistentLarger >= 0.90):
@@ -298,7 +295,7 @@ def evaluateModelsConsistency(modelNames, threshold, statIntervals, obsvLos, obs
         num += 1
 
         if(type == 'stronglyConsistent'):
-            resExplain += "we say a model fits the data very well if 95\% or more of the predicted bootstrap intervals are strongly consistent with the observed data"
+            resExplain += "we say a model fits the data very well if 90\% or more of the predicted bootstrap intervals (or the larger half of the predicted intervals) are strongly consistent with the observed data and at least 90\% of the predicted bootstrap intervals are weakly consistent with the observed data"
         elif(type == 'weaklyConsistent'):
             resExplain += "we say a model tends to fit the data if 90\% or more of the predicted bootstrap intervals (or the larger half of the predicted intervals) are weakly consistent with the observed data"
         elif(type == 'under'):
@@ -416,7 +413,7 @@ def calWithinIntervals(data,los,ups,threshold,largerHalfIdx,k):
     return (perAboveIntervals, perAboveIntervalsLarger, perWithinIntervals, perWithinIntervalsLarger, perBelowIntervals, perBelowIntervalsLarger)
 
 
-def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the problem instances", modelFileName="models.txt", threshold=0, alpha=95, numBootstrapSamples=100, statistic="median", toModifyModelDefaultParas=False, tableDetailsSupportFileName="table_Details-dataset-support", tableDetailsChallengeFileName="table_Details-dataset-challenge", tableFittedModelsFileName="table_Fitted-models", tableBootstrapIntervalsParaFileName="table_Bootstrap-intervals-of-parameters", tableBootstrapIntervalsSupportFileName="table_Bootstrap-intervals_support", tableBootstrapIntervalsChallengeFileName="table_Bootstrap-intervals_challenge", figureCdfsFileName="cdfs", figureFittedModelsFileName="fittedModels", figureFittedResiduesFileName="fittedResidues", latexTemplate = "template-AutoScaling.tex", modelPlotTemplate = "template_plotModels.plt", residuePlotTemplate = "template_plotResidues.plt", gnuplotPath = '', numRunsPerInstance = 0, perInstanceStatistic="median", numPerInstanceBootstrapSamples=10):
+def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the problem instances", modelFileName="models.txt", threshold=0, alpha=95, numBootstrapSamples=100, statistic="median", toModifyModelDefaultParas=False, tableDetailsSupportFileName="table_Details-dataset-support", tableDetailsChallengeFileName="table_Details-dataset-challenge", tableFittedModelsFileName="table_Fitted-models", tableBootstrapIntervalsParaFileName="table_Bootstrap-intervals-of-parameters", tableBootstrapIntervalsSupportFileName="table_Bootstrap-intervals_support", tableBootstrapIntervalsChallengeFileName="table_Bootstrap-intervals_challenge", figureCdfsFileName="cdfs", figureFittedModelsFileName="fittedModels", figureFittedResiduesFileName="fittedResidues", latexTemplate = "template-AutoScaling.tex", modelPlotTemplate = "template_plotModels.plt", residuePlotTemplate = "template_plotResidues.plt", gnuplotPath = '', numRunsPerInstance = 0, perInstanceStatistic="median", numPerInstanceBootstrapSamples=10,logLevel = "INFO"):
     #   get parameter values
     if os.path.exists( fileDir+"/configurations.txt" ):
         with open( fileDir+"/configurations.txt", "r") as configFile:
@@ -460,8 +457,23 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
                     #YP: Added modifyDefaultParameters to configuration file
                     if terms[0].strip() == "modifyDefaultParameters":
                         toModifyModelDefaultParas = (terms[1].strip() == "True")
+                    if terms[0].strip() == 'logLevel':
+                        logLevel = terms[1].strip()
+
+    numericLevel = getattr(logging, logLevel.upper(), None)
+    if not isinstance(numericLevel, int):
+        raise ValueError('Invalid log level: %s' % logLevel)
+    logging.basicConfig(format='[%(levelname)s]: %(message)s',level=numericLevel) 
+    logger = logging.getLogger('ESA logger')
+
+    #logger.warning('test')
+
+
+    if(threshold == 1):
+        raise ValueError('The number of support instance sizes used (numTrainingData) must be greater than 1')
 
     #   prepare template files
+    logger.debug('Preparing template files')
     if not os.path.exists( fileDir+"/"+modelFileName ):
         os.system( "cp models.txt %s" % (fileDir+"/"+modelFileName) )
     if not os.path.exists( fileDir+"/"+latexTemplate ):
@@ -475,83 +487,108 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
         os.system( "cp pdflatex_input.txt " + fileDir +"/pdflatex_input.txt" )    
     #print(numRunsPerInstance)
     #   read in runtimes and summarize
-    (sizes, runtimes, numInsts, numRunsPerInstance) = summarizeRuntimes.getRuntimesFromFile( fileDir, fileName, numRunsPerInstance )
+    logger.debug('Reading running times from file')
+    (sizes, runtimes, numInsts, numRunsPerInstance) = summarizeRuntimes.getRuntimesFromFile(logger, fileDir, fileName, numRunsPerInstance )
 
     cwd = os.getcwd()
     os.chdir( fileDir )
+    logger.debug('Calculating summary statistics for running times.')
     (counts, stats, statIntervals, threshold) = summarizeRuntimes.summarizeRuntimes( sizes, runtimes, numInsts, algName, ".", statistic, perInstanceStatistic, threshold )
     # stats = [ summarizeRuntimes.calStatistic( runtimes[i], statistic ) for i in range(0, len(sizes)) ]
 
     #   read in model names and definitions
-    (modelNames, modelNumParas, modelOriReps, modelDefs, modelGnuplotDefs, modelParaDefaults, modelFuncs) = getModels( '.', modelFileName, toModifyModelDefaultParas, sizes, stats, threshold )
+    logger.debug('Reading in model names and definitions')
+    (modelNames, modelNumParas, modelOriReps, modelDefs, modelGnuplotDefs, modelParaDefaults, modelFuncs) = getModels(logger, '.', modelFileName, toModifyModelDefaultParas, sizes, stats, threshold )
     modelReps = replaceRepsForOutput( modelOriReps )
 
     #   prepare gnuplot scripts
+    logger.debug('Creating gnuplot scripts')
     gnuplotHelper.genGnuplotScripts( modelNames, modelGnuplotDefs, modelNumParas, modelParaDefaults, '.', sizes, modelPlotTemplate, residuePlotTemplate )
     
 
     #YP: Refactored code to only create bootstrap samples once to save time.
-    bStat = bootstrapHelper.doBootstrap(runtimes, numInsts, numBootstrapSamples, statistic, perInstanceStatistic, numPerInstanceBootstrapSamples)
+    logger.debug('Creating bootstrap samples of running time data')
+    bStat = bootstrapHelper.doBootstrap(logger, runtimes, numInsts, numBootstrapSamples, statistic, perInstanceStatistic, numPerInstanceBootstrapSamples)
 
 
     #   calculate confidence intervals of observed data
+    logger.debug('Calculating confidence intervals of observed data.')
     (obsvLos, obsvUps) = bootstrapHelper.getBootstrapIntervals( bStat )
 
     #   fit models
-    (para, rmseTrains, rmseTests) = modelFittingHelper.fitModels( algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes, stats, statIntervals, threshold, gnuplotPath, modelFileName)
+    logger.debug('Fitting models to the observed point estimates.')
+    (para, rmseTrains, rmseTests) = modelFittingHelper.fitModels(logger, algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes, stats, statIntervals, threshold, gnuplotPath, modelFileName)
 
 
     #   calculate bootstrap intervals of fitted models
-
-    (paras, preds) = bootstrapHelper.doBootstrapAnalysis(bStat[0], sizes, runtimes, threshold, statistic, modelNames, modelNumParas, modelFuncs, numBootstrapSamples, gnuplotPath )
+    logger.debug('Fitting models to the bootstrap samples.')
+    (paras, preds) = bootstrapHelper.doBootstrapAnalysis(logger, bStat[0], sizes, runtimes, threshold, statistic, modelNames, modelNumParas, modelFuncs, numBootstrapSamples, gnuplotPath )
 
     #YP: added a function call to check which model is considered the best
     #fit after the bootstrap sampling
+    logger.debug('Calculating bootstrap sample RMSE statistics.')
     (rmseTrainBounds, rmseTestBounds, medianTrainRMSEGeoMean, meanTrainRMSEGeoMean, medianTestRMSEGeoMean, meanTestRMSEGeoMean) = bootstrapHelper.getBootstrapRMSE(preds, bStat, sizes, threshold, modelNames)
 
     #print(rmseTests)
     #print(rmseTestBounds)
     #YP: Now we create the fitted model tables.
+    logger.debug('Creating Tables for the fitted models.')
     modelFittingHelper.makeTableFittedModels(para, rmseTrains, rmseTests, modelNumParas, modelReps, modelNames, threshold, algName, sizes)
 
 
     #YP: Now we create the bootstrap model RMSE tables (new in ESA v1.1)
     #Note that we do not currently include the meanTrain/TestRMSEGeoMean values;
     #however, they could be added at a later time if desired, so we incldue them
+    logger.debug('Creating bootstrap RMSE tables.')
     (tableBootstrapModelRMSEFileName, winnerSelectRule) = bootstrapHelper.makeTableBootstrapModelRMSEs(rmseTrainBounds, rmseTestBounds, medianTrainRMSEGeoMean, meanTrainRMSEGeoMean, medianTestRMSEGeoMean, meanTestRMSEGeoMean, modelNames, algName)
 
 
     #   fit models
-    modelFittingHelper.fitModels( algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes, stats, statIntervals, threshold, gnuplotPath, modelFileName)
+    #modelFittingHelper.fitModels(logger, algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes, stats, statIntervals, threshold, gnuplotPath, modelFileName)
 
+    logger.debug('Calculating confidence intervals for the model parameters.')
     (paraLos, paraUps) = bootstrapHelper.getLoUps( modelNames, paras )
+
+    logger.debug('Creating tables containing intervals for the model parameters.')
     csvHelper.genCSV( ".", "table_Bootstrap-intervals-of-parameters.csv", [ ("Confidence intervals of p%d" % i) for i in range(0, max(modelNumParas)) ], [ algName+" "+modelName+". model" for modelName in modelNames ], getIntervals(paraLos, paraUps))
     latexHelper.genTexTableBootstrapParas( algName, modelNames, modelNumParas, paraLos, paraUps )
 
+
+    logger.debug('Calculating confidence intervals for model predictions')
     (predLos, predUps) = bootstrapHelper.getLoUps( modelNames, preds )
+
+    #YP: Testing stuff out here:
+    #bootstrapHelper.getRelativeRMSEsAndIntervals(medianTestRMSEGeoMean,stats,obsvLos,obsvUps,predLos,predUps,threshold,sizes,modelNames)
+
+    logger.debug('Creating tables with bootstrap intervals of running time predictions')
     csvHelper.genCSV( ".", "table_Bootstrap-intervals.csv", [algName for i in range(threshold, len(sizes))], ["n"] + [modelName+". model confidence intervals" for modelName in modelNames ] + ["observed point estimates", "observed confidence intervals"], [sizes[threshold:]] + getIntervals([predLos[k][threshold:] for k in range(0, len(modelNames))], [predUps[k][threshold:] for k in range(0, len(modelNames))]) + [stats[threshold:]] + getIntervals([obsvLos[threshold:]], [obsvUps[threshold:]]) )
     latexHelper.genTexTableBootstrap( algName, modelNames, sizes, 0, threshold, predLos, predUps, statIntervals, obsvLos, obsvUps, tableBootstrapIntervalsSupportFileName+".tex" )
     latexHelper.genTexTableBootstrap( algName, modelNames, sizes, threshold, len(sizes), predLos, predUps, statIntervals, obsvLos, obsvUps, tableBootstrapIntervalsChallengeFileName+".tex" )
 
-    #   add above data into gnuplot fi0les
+    #   add above data into gnuplot files
+    logger.debug('Setting up gnuplot figure files.')
     gnuplotHelper.genGnuplotFiles( fileDir, sizes, stats, statIntervals, obsvLos, obsvUps, predLos, predUps, threshold, statistic )
 
     #   generate plots
     #YP: Added gnuplotPath
     #YP: Instead of directing output to /dev/null I'm sending it to a log file and checking for the beginning of an error message in the gnuplot file. If there is one, we print a message and save the output file.
+    logger.debug('Creating fittedModels.pdf')
     os.system(gnuplotPath + "gnuplot plotModels.plt >& plotModels.log")
+    logger.debug('Creating fittedResidues.pdf')
     os.system(gnuplotPath + "gnuplot plotResidues.plt >& plotResidues.log")
     logFiles = ['plotModels', 'plotResidues']
     for logFile in logFiles:
         with open(logFile + '.log') as f_log:
             logText = f_log.read()
             if('"' + logFile + '.plt", line' in logText):
-                print('[Warning]: There may have been an error in ' + logFile + '.plt. If you encounter any problems, please try running it manually and checking the corresponding gnuplot template file you used. The output was saved in ' + logFile + '.log')
+                logger.warning('There may have been an error in ' + logFile + '.plt. If you encounter any problems, please try running it manually and checking the corresponding gnuplot template file you used. The output was saved in ' + logFile + '.log')
             else: 
                 os.system('rm -f ' + logFile + '.log')
 
     #   generate files
-    latexHelper.genTexFile( fileDir, algName, instName, sizes, counts, numInsts, threshold, modelNames, modelOriReps, modelNumParas, numBootstrapSamples, statistic, numRunsPerInstance, perInstanceStatistic, numPerInstanceBootstrapSamples, tableDetailsSupportFileName, tableDetailsChallengeFileName, tableFittedModelsFileName, tableBootstrapIntervalsParaFileName, tableBootstrapIntervalsSupportFileName, tableBootstrapIntervalsChallengeFileName, tableBootstrapModelRMSEFileName, winnerSelectRule, figureCdfsFileName, figureFittedModelsFileName, figureFittedResiduesFileName, evaluateModelsConsistency(modelNames, threshold, statIntervals, obsvLos, obsvUps, predLos, predUps), latexTemplate )
+    logger.debug('Populating the LaTeX report template.')
+    latexHelper.genTexFile( fileDir, algName, instName, sizes, counts, numInsts, threshold, modelNames, modelOriReps, modelNumParas, numBootstrapSamples, statistic, numRunsPerInstance, perInstanceStatistic, numPerInstanceBootstrapSamples, tableDetailsSupportFileName, tableDetailsChallengeFileName, tableFittedModelsFileName, tableBootstrapIntervalsParaFileName, tableBootstrapIntervalsSupportFileName, tableBootstrapIntervalsChallengeFileName, tableBootstrapModelRMSEFileName, winnerSelectRule, figureCdfsFileName, figureFittedModelsFileName, figureFittedResiduesFileName, evaluateModelsConsistency(logger,modelNames, threshold, statIntervals, obsvLos, obsvUps, predLos, predUps), latexTemplate )
+    logger.debug('Running pdflatex and bibtex to create the LaTeX report.')
     os.system( "pdflatex 'scaling_%s.tex' >& /dev/null < pdflatex_input.txt" % latexHelper.removeSubstrs( algName, '/' ) )
     os.system( "bibtex 'scaling_%s' >& /dev/null < pdflatex_input.txt" %       latexHelper.removeSubstrs( algName, '/' ) )
     os.system( "pdflatex 'scaling_%s.tex' >& /dev/null < pdflatex_input.txt" % latexHelper.removeSubstrs( algName, '/' ) )
@@ -559,7 +596,7 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
 
     #YP: Added a check for the pdf file and error message
     if(not os.path.isfile('scaling_' + algName + '.pdf')):
-        print('[Error]: scaling_' + algName + '.pdf was not successfully created. This may be due to a tex complication error. If you are not sure why, please try compiling scaling_' + algName + '.tex manually to check for errors.')
+        logger.error('scaling_' + algName + '.pdf was not successfully created. This may be due to a tex complication error. If you are not sure why, please try compiling scaling_' + algName + '.tex manually to check for errors.')
 
     #   wrap up
     os.chdir( cwd )
