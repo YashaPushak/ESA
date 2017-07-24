@@ -1,0 +1,4 @@
+,Percent Strongly Consistent,Percent Weakly Consistent,Percent above intervals,Percent below intervals,Percent Strongly Consistent (larger half),Percent Weakly Consistent (larger half),Percent above intervals (larger half),Percent below intervals (larger half)
+Exp,0.0,0.2,0.0,0.8,0.0,0.0,0.0,1.0
+RootExp,0.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0
+Poly,0.8,1.0,0.0,0.0,1.0,1.0,0.0,0.0

@@ -1,0 +1,7 @@
+fileName : runtimes.csv
+algName : WalkSAT/SKC
+instName : random 3-SAT instances at the phase transition
+numTrainingData : 7
+alpha : 95
+numBootstrapSamples : 1000
+statistic : median

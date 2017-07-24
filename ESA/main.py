@@ -413,7 +413,7 @@ def calWithinIntervals(data,los,ups,threshold,largerHalfIdx,k):
     return (perAboveIntervals, perAboveIntervalsLarger, perWithinIntervals, perWithinIntervalsLarger, perBelowIntervals, perBelowIntervalsLarger)
 
 
-def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the problem instances", modelFileName="models.txt", threshold=0, alpha=95, numBootstrapSamples=100, statistic="median", toModifyModelDefaultParas=False, tableDetailsSupportFileName="table_Details-dataset-support", tableDetailsChallengeFileName="table_Details-dataset-challenge", tableFittedModelsFileName="table_Fitted-models", tableBootstrapIntervalsParaFileName="table_Bootstrap-intervals-of-parameters", tableBootstrapIntervalsSupportFileName="table_Bootstrap-intervals_support", tableBootstrapIntervalsChallengeFileName="table_Bootstrap-intervals_challenge", figureCdfsFileName="cdfs", figureFittedModelsFileName="fittedModels", figureFittedResiduesFileName="fittedResidues", latexTemplate = "template-AutoScaling.tex", modelPlotTemplate = "template_plotModels.plt", residuePlotTemplate = "template_plotResidues.plt", gnuplotPath = '', numRunsPerInstance = 0, perInstanceStatistic="median", numPerInstanceBootstrapSamples=10,logLevel = "INFO"):
+def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the problem instances", modelFileName="models.txt", threshold=0, alpha=95, numBootstrapSamples=100, statistic="median", toModifyModelDefaultParas=False, tableDetailsSupportFileName="table_Details-dataset-support", tableDetailsChallengeFileName="table_Details-dataset-challenge", tableFittedModelsFileName="table_Fitted-models", tableBootstrapIntervalsParaFileName="table_Bootstrap-intervals-of-parameters", tableBootstrapIntervalsSupportFileName="table_Bootstrap-intervals_support", tableBootstrapIntervalsChallengeFileName="table_Bootstrap-intervals_challenge", figureCdfsFileName="cdfs", figureFittedModelsFileName="fittedModels", figureFittedResiduesFileName="fittedResidues", latexTemplate = "template-AutoScaling.tex", modelPlotTemplate = "template-plotModels.plt", residuePlotTemplate = "template-plotResidues.plt", gnuplotPath = '', numRunsPerInstance = 0, perInstanceStatistic="median", numPerInstanceBootstrapSamples=10,logLevel = "INFO"):
     #   get parameter values
     if os.path.exists( fileDir+"/configurations.txt" ):
         with open( fileDir+"/configurations.txt", "r") as configFile:
@@ -479,12 +479,12 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     if not os.path.exists( fileDir+"/"+latexTemplate ):
         os.system( "cp template-AutoScaling.tex %s" % (fileDir+"/"+latexTemplate) )
     if not os.path.exists( fileDir+"/"+modelPlotTemplate ):
-        os.system( "cp template_plotModels.plt %s" % (fileDir+"/"+modelPlotTemplate) )
+        os.system( "cp template-plotModels.plt %s" % (fileDir+"/"+modelPlotTemplate) )
     if not os.path.exists( fileDir+"/"+residuePlotTemplate ):
-        os.system( "cp template_plotResidues.plt %s" % (fileDir+"/"+residuePlotTemplate) )
+        os.system( "cp templateiplotResidues.plt %s" % (fileDir+"/"+residuePlotTemplate) )
     #   move the pdflatex input file
-    if not os.path.exists( fileDir+"/pdflatex_input.txt" ):
-        os.system( "cp pdflatex_input.txt " + fileDir +"/pdflatex_input.txt" )    
+    if not os.path.exists( fileDir+"/pdflatex-input.txt" ):
+        os.system( "cp pdflatex-input.txt " + fileDir +"/pdflatex-input.txt" )    
     #print(numRunsPerInstance)
     #   read in runtimes and summarize
     logger.debug('Reading running times from file')
@@ -589,14 +589,14 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     logger.debug('Populating the LaTeX report template.')
     latexHelper.genTexFile( fileDir, algName, instName, sizes, counts, numInsts, threshold, modelNames, modelOriReps, modelNumParas, numBootstrapSamples, statistic, numRunsPerInstance, perInstanceStatistic, numPerInstanceBootstrapSamples, tableDetailsSupportFileName, tableDetailsChallengeFileName, tableFittedModelsFileName, tableBootstrapIntervalsParaFileName, tableBootstrapIntervalsSupportFileName, tableBootstrapIntervalsChallengeFileName, tableBootstrapModelRMSEFileName, winnerSelectRule, figureCdfsFileName, figureFittedModelsFileName, figureFittedResiduesFileName, evaluateModelsConsistency(logger,modelNames, threshold, statIntervals, obsvLos, obsvUps, predLos, predUps), latexTemplate )
     logger.debug('Running pdflatex and bibtex to create the LaTeX report.')
-    os.system( "pdflatex 'scaling_%s.tex' >& /dev/null < pdflatex_input.txt" % latexHelper.removeSubstrs( algName, '/' ) )
-    os.system( "bibtex 'scaling_%s' >& /dev/null < pdflatex_input.txt" %       latexHelper.removeSubstrs( algName, '/' ) )
-    os.system( "pdflatex 'scaling_%s.tex' >& /dev/null < pdflatex_input.txt" % latexHelper.removeSubstrs( algName, '/' ) )
-    os.system( "pdflatex 'scaling_%s.tex' >& /dev/null < pdflatex_input.txt" % latexHelper.removeSubstrs( algName, '/' ) )
+    os.system( "pdflatex 'scaling_%s.tex' >& /dev/null < pdflatex-input.txt" % latexHelper.removeSubstrs( algName, '/' ) )
+    os.system( "bibtex 'scaling_%s' >& /dev/null < pdflatex-input.txt" %       latexHelper.removeSubstrs( algName, '/' ) )
+    os.system( "pdflatex 'scaling_%s.tex' >& /dev/null < pdflatex-input.txt" % latexHelper.removeSubstrs( algName, '/' ) )
+    os.system( "pdflatex 'scaling_%s.tex' >& /dev/null < pdflatex-input.txt" % latexHelper.removeSubstrs( algName, '/' ) )
 
     #YP: Added a check for the pdf file and error message
-    if(not os.path.isfile('scaling_' + algName + '.pdf')):
-        logger.error('scaling_' + algName + '.pdf was not successfully created. This may be due to a tex complication error. If you are not sure why, please try compiling scaling_' + algName + '.tex manually to check for errors.')
+    if(not os.path.isfile('scaling_' + latexHelper.removeSubstrs(algName, '/') + '.pdf')):
+        logger.error('scaling_' + latexHelper.removeSubstrs(algName, '/') + '.pdf was not successfully created. This may be due to a tex complication error. If you are not sure why, please try compiling scaling_' + latexHelper.removeSubstrs(algName, '/') + '.tex manually to check for errors.')
 
     #   wrap up
     os.chdir( cwd )
