@@ -87,7 +87,7 @@ def doBootstrapAnalysis(logger, bStat, sizes, data, threshold, statistic, modelN
             elif('After 1 iterations the fit converged' in fileText):
                 warningCount += 1
                 if(warningCount < 10):
-                    failedModel = fileText.split('After 1 iterations the fit converged')[0].split('lambda')[-1].split('_p0')[0].strip()
+                    failedModel = fileText.split('After 1 iterations the fit converged')[0].split('_p0')[0].split()[-1].strip()
                     logger.warning('The ' + failedModel + ' model converged after only 1 iteration. This is often a sign that the model is a very bad fit for the data (or that the default fitting parameters you choose were very good).') 
  
         with open("fit-models.log") as fitsFile:
