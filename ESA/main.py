@@ -484,6 +484,9 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
         os.system( "cp templateiplotResidues.plt %s" % (fileDir+"/"+residuePlotTemplate) )
     #   move the pdflatex input file
     if not os.path.exists( fileDir+"/pdflatex-input.txt" ):
+        if(not os.path.exists('pdflatex-input.txt')):
+            with open('pdflatex-input.txt','w') as f_out:
+                f_out.write('R\n\n')
         os.system( "cp pdflatex-input.txt " + fileDir +"/pdflatex-input.txt" )    
     #print(numRunsPerInstance)
     #   read in runtimes and summarize

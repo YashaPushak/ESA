@@ -8,7 +8,7 @@ cd ESA
 
 Next, if you do not already have them, you will need to install gnuplot and python with the numpy package. ESA was designed and tested using python v2.7.13 and gnuplot v5.0 patchlevel 0.
 
-Once both are installed, you can test ESA using the following command line:
+Once both are installed, and before you can use ESA on your own data, you will need to create a directory for the input and output files, as well as a configuration file specifying the details ESA needs to run. The easiest way to learn this is by example. Try testing ESA using the following command line (which will also help you verify that everything was installed correctly):
 
 ./runESA.sh example_scenarios/WalkSAT
 
