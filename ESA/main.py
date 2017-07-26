@@ -481,7 +481,7 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     if not os.path.exists( fileDir+"/"+modelPlotTemplate ):
         os.system( "cp template-plotModels.plt %s" % (fileDir+"/"+modelPlotTemplate) )
     if not os.path.exists( fileDir+"/"+residuePlotTemplate ):
-        os.system( "cp templateiplotResidues.plt %s" % (fileDir+"/"+residuePlotTemplate) )
+        os.system( "cp template-plotResidues.plt %s" % (fileDir+"/"+residuePlotTemplate) )
     #   move the pdflatex input file
     if not os.path.exists( fileDir+"/pdflatex-input.txt" ):
         if(not os.path.exists('pdflatex-input.txt')):
