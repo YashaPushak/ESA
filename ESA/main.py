@@ -8,6 +8,7 @@ import csvHelper
 import gnuplotHelper
 import latexHelper
 import logging
+import sys
 
 #def inputDefToPythonDef( md ):
 #    idx = md.find( 'p', 0 )
@@ -413,7 +414,7 @@ def calWithinIntervals(data,los,ups,threshold,largerHalfIdx,k):
     return (perAboveIntervals, perAboveIntervalsLarger, perWithinIntervals, perWithinIntervalsLarger, perBelowIntervals, perBelowIntervalsLarger)
 
 
-def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the problem instances", modelFileName="models.txt", threshold=0, alpha=95, numBootstrapSamples=100, statistic="median", toModifyModelDefaultParas=False, tableDetailsSupportFileName="table_Details-dataset-support", tableDetailsChallengeFileName="table_Details-dataset-challenge", tableFittedModelsFileName="table_Fitted-models", tableBootstrapIntervalsParaFileName="table_Bootstrap-intervals-of-parameters", tableBootstrapIntervalsSupportFileName="table_Bootstrap-intervals_support", tableBootstrapIntervalsChallengeFileName="table_Bootstrap-intervals_challenge", figureCdfsFileName="cdfs", figureFittedModelsFileName="fittedModels", figureFittedResiduesFileName="fittedResidues", latexTemplate = "template-AutoScaling.tex", modelPlotTemplate = "template-plotModels.plt", residuePlotTemplate = "template-plotResidues.plt", gnuplotPath = '', numRunsPerInstance = 0, perInstanceStatistic="median", numPerInstanceBootstrapSamples=10,logLevel = "INFO"):
+def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the problem instances", modelFileName="models.txt", threshold=0, alpha=95, numBootstrapSamples=100, statistic="median", toModifyModelDefaultParas=False, tableDetailsSupportFileName="table_Details-dataset-support", tableDetailsChallengeFileName="table_Details-dataset-challenge", tableFittedModelsFileName="table_Fitted-models", tableBootstrapIntervalsParaFileName="table_Bootstrap-intervals-of-parameters", tableBootstrapIntervalsSupportFileName="table_Bootstrap-intervals_support", tableBootstrapIntervalsChallengeFileName="table_Bootstrap-intervals_challenge", figureCdfsFileName="cdfs", figureFittedModelsFileName="fittedModels", figureFittedResiduesFileName="fittedResidues", latexTemplate = "template-AutoScaling.tex", modelPlotTemplate = "template-plotModels.plt", residuePlotTemplate = "template-plotResidues.plt", gnuplotPath = '', numRunsPerInstance = 0, perInstanceStatistic="median", numPerInstanceBootstrapSamples=10,logLevel = "INFO", logFile=''):
     #   get parameter values
     if os.path.exists( fileDir+"/configurations.txt" ):
         with open( fileDir+"/configurations.txt", "r") as configFile:
@@ -459,11 +460,17 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
                         toModifyModelDefaultParas = (terms[1].strip() == "True")
                     if terms[0].strip() == 'logLevel':
                         logLevel = terms[1].strip()
+                    if terms[0].strip() == 'logFile':
+                        logFile = terms[1].strip()
 
     numericLevel = getattr(logging, logLevel.upper(), None)
     if not isinstance(numericLevel, int):
         raise ValueError('Invalid log level: %s' % logLevel)
-    logging.basicConfig(format='[%(levelname)s]: %(message)s',level=numericLevel) 
+    if(len(logFile) == 0):
+        logging.basicConfig(format='[%(levelname)s]: %(message)s',level=numericLevel) 
+    else:
+        logging.basicConfig(format='[%(levelname)s]: %(message)s',level=numericLevel,filename=fileDir + '/' + logFile)
+    
     logger = logging.getLogger('ESA logger')
 
     #logger.warning('test')
@@ -575,18 +582,21 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     #   generate plots
     #YP: Added gnuplotPath
     #YP: Instead of directing output to /dev/null I'm sending it to a log file and checking for the beginning of an error message in the gnuplot file. If there is one, we print a message and save the output file.
-    logger.debug('Creating fittedModels.pdf')
+    logger.debug('Creating fittedModels.pdf...')
     os.system(gnuplotPath + "gnuplot plotModels.plt >& plotModels.log")
-    logger.debug('Creating fittedResidues.pdf')
+    logger.debug('Creating fittedResidues.pdf...')
     os.system(gnuplotPath + "gnuplot plotResidues.plt >& plotResidues.log")
     logFiles = ['plotModels', 'plotResidues']
     for logFile in logFiles:
+        logger.debug('Checking for errors in ' + logFile + '.log...')
         with open(logFile + '.log') as f_log:
             logText = f_log.read()
             if('"' + logFile + '.plt", line' in logText):
                 logger.warning('There may have been an error in ' + logFile + '.plt. If you encounter any problems, please try running it manually and checking the corresponding gnuplot template file you used. The output was saved in ' + logFile + '.log')
             else: 
                 os.system('rm -f ' + logFile + '.log')
+
+
 
     #   generate files
     logger.debug('Populating the LaTeX report template.')

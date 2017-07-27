@@ -156,11 +156,11 @@ def genTexFile(fileDir, algName, instName, sizes, counts, numInsts, threshold, m
     customCommands = ''
     for i in range(0, len(counts)):
         if counts[i]<numInsts[i]:
-            customCommands += '\\renewcommand{\\medianInterval}[1]{\orange{#1}} \n'
+            customCommands += '\\renewcommand{\\medianInterval}[1]{#1} \n'
             break
     #YP: Added a new command.
     if(not numRunsPerInstance == 1):
-        customCommands += '\\renewcommand{\\randomizedAlgorithm}[1]{\yp{#1}} \n'
+        customCommands += '\\renewcommand{\\randomizedAlgorithm}[1]{#1} \n'
 
     #YP: added perInstanceStatistic, numRunsPerInstance, and numPerInstanceBootstrapSamples
     contents = {"customCommands":customCommands, "algName":escapeNonAlNumChars(algName), "instName":escapeNonAlNumChars(instName), "models":modelsStr, "numSizes":len(sizes), "largestSupportSize":sizes[threshold-1], "numBootstrapSamples":"%d" % numBootstrapSamples, "statistic":statistic, "table-Details-dataset-support":"\\input{%s}" % tableDetailsSupportFileName, "table-Details-dataset-challenge":"\\input{%s}" % tableDetailsChallengeFileName, "table-Fitted-models":"\\input{%s}" % tableFittedModelsFileName, "table-Bootstrap-intervals-of-parameters":"\\input{%s}" % tableBootstrapIntervalsParaFileName, "table-Bootstrap-intervals-support":"\\input{%s}" % tableBootstrapIntervalsSupportFileName, "table-Bootstrap-intervals-challenge":"\\input{%s}" % tableBootstrapIntervalsChallengeFileName, "figure-cdfs":"\\includegraphics[width=0.8\\textwidth]{%s}" % figureCdfsFileName, "figure-fittedModels":"\\includegraphics[width=0.8\\textwidth]{%s}" % (figureFittedModelsFileName), "figure-fittedResidues":"\\includegraphics[width=0.8\\textwidth]{%s}" % (figureFittedResiduesFileName), "supportSizes":getSizesStr(sizes, 0, threshold), "challengeSizes":getSizesStr(sizes, threshold, len(sizes)), "analysisSummary":analysisSummary[0], "analysisSummaryExplaination":analysisSummary[1], "perInstanceStatistic":perInstanceStatistic, "numRunsPerInstance":numRunsPerInstance, "numPerInstanceBootstrapSamples":numPerInstanceBootstrapSamples, "table-Bootstrap-model-RMSE":"\\input{%s}:" % tableBootstrapModelRMSEFileName, "winnerSelectRule": winnerSelectRule}

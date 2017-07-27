@@ -8,7 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 
 ### Added
  - New error messages and handling for common problems.
- - Exposed a new parameter to the configuration file 'logLevel' which can be set to any of 'Error', 'Warning', 'Info' or 'Debug',  to control the level of output printed to the console by ESA. 
+ - Added a new parameter to the configuration file 'logLevel' which can be set to any of 'Error', 'Warning', 'Info' or 'Debug',  to control the level of output printed to the console by ESA. 
+ - Added a new parameter for the configuration file 'logFile' which can be used to specify a file where the logging information is stored, instead of having it printed to the console.
  - Nested bootstrapping can be performed to calculate per-instance statistics for randomized algorithms with multiple independent runs on each instance. The user can specify multiple independent runs per instance by adding additional columns with running times to the running time csv file. 
  - There is a new, optional parameter for the configuration.txt file "numRunsPerInstance", which is used to validate that the number of running times provided for each instance matches the specified number. ESA will direct users towards any instances with the wrong number of running times if any exist. If not provided, ESA will automatically identify the correct number and issue a warning if the nuber is inconsistent.
  - More information printed to console to show when bootstrap samples have been made and when models have been fit to them.
