@@ -61,7 +61,7 @@ def getBootstrapIntervals(bStat, alpha=95):
     ups = [ summarizeRuntimes.calStatistic(d, "Q%f"%(50+alpha/2.0)) for d in bStat[1] ]
     return (los, ups)
 
-def doBootstrapAnalysis(logger, bStat, sizes, data, threshold, statistic, modelNames, modelNumParas, modelFuncs, numSamples, gnuplotPath, alpha=95):
+def doBootstrapAnalysis(logger, bStat, sizes, data, threshold, statistic, modelNames, modelNumParas, modelFuncs, numSamples, gnuplotPath, stretchSize, alpha=95):
     #bStat = doBootstrap(data, numInsts, numSamples, statistic, perInstanceStatistic)[0]
     logger.debug("bStat size: %d x %d" % ( len(bStat), len(bStat[0]) ))
 
@@ -110,18 +110,23 @@ def doBootstrapAnalysis(logger, bStat, sizes, data, threshold, statistic, modelN
         logger.warning(str(warningCount - 10) + ' addition warnings about models converging after 1 iteration suppressed.')
 
     os.chdir(owd)
-    return readBootstrapDatFile( modelNames, modelNumParas, modelFuncs, sizes )
+    return readBootstrapDatFile( modelNames, modelNumParas, modelFuncs, sizes, stretchSize )
 
-def readBootstrapDatFile( modelNames, modelNumParas, modelFuncs, sizes ):                 
+def readBootstrapDatFile( modelNames, modelNumParas, modelFuncs, sizes, stretchSize ):                 
     paras = []
     preds = []
+    #YP: Added an extra prediction size and stretch size that are beyond the challenge instance sizes
+    stretchPreds = []
     for k in range(0, len(modelNames)):
         paras.append( [] )
         preds.append( [] )
+        stretchPreds.append( [] )
         for j in range(0, modelNumParas[k]):
             paras[k].append( [] )
         for j in range(0, len(sizes)):
             preds[k].append( [] )
+        for j in [0,1]:
+            stretchPreds[k].append( [] )
 
     for k in range(0, len(modelNames)):
         modelName = modelNames[k]
@@ -134,8 +139,12 @@ def readBootstrapDatFile( modelNames, modelNumParas, modelFuncs, sizes ):
                     paras[k][j].append( float( terms[0+j] ) )
                 for j in range(0, len(sizes)):
                     preds[k][j].append( modelFuncs[k]( [ paras[k][i][-1] for i in range(0,modelNumParas[k]) ], sizes[j] ) )
+                #YP: Added an extra 'stretch' prediction size here for predictions beyond the challenge instance size
+                if(stretchSize > 0):
+                    for j in [0,1]:
+                        stretchPreds[k][j].append( modelFuncs[k]( [ paras[k][i][-1] for i in range(0,modelNumParas[k]) ], stretchSize*(10**j) ) )
 
-    return paras, preds
+    return paras, preds, stretchPreds
 
 def getLoUps( modelNames, data, alpha=95 ):
     dataLos = []

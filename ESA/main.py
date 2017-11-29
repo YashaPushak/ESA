@@ -65,10 +65,14 @@ def getModels(logger, fileDir, fileName, toModifyModelDefaultParas, sizes, stats
                 modelGnuplotDefs.append( inputModelToInternal( terms[4].strip(), False ) )
                 modelParaDefaults.append( [] )
                 y1 = float(stats[threshold-1])
-                y0 = float(stats[0])
                 #print(threshold)
                 x1 = float(sizes[threshold-1])
-                x0 = float(sizes[0])
+                #Use the first non-zero statistic
+                ind = 0 
+                while(float(stats[ind]) <= 0): 
+                    ind += 1
+                y0 = float(stats[ind])
+                x0 = float(sizes[ind])
                 #print(x1)
                 #print(x0)
                 #print(x1**(0.5))
@@ -85,7 +89,7 @@ def getModels(logger, fileDir, fileName, toModifyModelDefaultParas, sizes, stats
                     logger.info("Replacing %s model parameters as (%f, %f)" % (modelNames[-1], a, b))
                     modelParaDefaults[-1].append( a )
                     modelParaDefaults[-1].append( b )
-                elif toModifyModelDefaultParas and modelNames[-1].lower() == "rootexp" or modelNames[-1].lower() == "root-exponential" or modelNames[-1].lower == "sqrtexp":
+                elif toModifyModelDefaultParas and modelNames[-1].lower() == "rootexp" or modelNames[-1].lower() == "root-exponential" or modelNames[-1].lower() == "sqrtexp":
                     #YP: My new way of pre-fitting the parameters:
                     #which exactly fits the model to the smallest and
                     #largest support instance sizes.
@@ -414,7 +418,7 @@ def calWithinIntervals(data,los,ups,threshold,largerHalfIdx,k):
     return (perAboveIntervals, perAboveIntervalsLarger, perWithinIntervals, perWithinIntervalsLarger, perBelowIntervals, perBelowIntervalsLarger)
 
 
-def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the problem instances", modelFileName="models.txt", threshold=0, alpha=95, numBootstrapSamples=100, statistic="median", toModifyModelDefaultParas=False, tableDetailsSupportFileName="table_Details-dataset-support", tableDetailsChallengeFileName="table_Details-dataset-challenge", tableFittedModelsFileName="table_Fitted-models", tableBootstrapIntervalsParaFileName="table_Bootstrap-intervals-of-parameters", tableBootstrapIntervalsSupportFileName="table_Bootstrap-intervals_support", tableBootstrapIntervalsChallengeFileName="table_Bootstrap-intervals_challenge", figureCdfsFileName="cdfs", figureFittedModelsFileName="fittedModels", figureFittedResiduesFileName="fittedResidues", latexTemplate = "template-AutoScaling.tex", modelPlotTemplate = "template-plotModels.plt", residuePlotTemplate = "template-plotResidues.plt", gnuplotPath = 'auto', numRunsPerInstance = 0, perInstanceStatistic="median", numPerInstanceBootstrapSamples=10,logLevel = "INFO", logFile='stdout'):
+def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the problem instances", modelFileName="models.txt", threshold=0, alpha=95, numBootstrapSamples=100, statistic="median", toModifyModelDefaultParas=False, tableDetailsSupportFileName="table_Details-dataset-support", tableDetailsChallengeFileName="table_Details-dataset-challenge", tableFittedModelsFileName="table_Fitted-models", tableBootstrapIntervalsParaFileName="table_Bootstrap-intervals-of-parameters", tableBootstrapIntervalsSupportFileName="table_Bootstrap-intervals_support", tableBootstrapIntervalsChallengeFileName="table_Bootstrap-intervals_challenge", figureCdfsFileName="cdfs", figureFittedModelsFileName="fittedModels", figureFittedResiduesFileName="fittedResidues", latexTemplate = "template-AutoScaling.tex", modelPlotTemplate = "template-plotModels.plt", residuePlotTemplate = "template-plotResidues.plt", gnuplotPath = 'auto', numRunsPerInstance = 0, perInstanceStatistic="median", numPerInstanceBootstrapSamples=10,logLevel = "INFO", logFile='stdout', stretchSize=-1):
     #   get parameter values
     if os.path.exists( fileDir+"/configurations.txt" ):
         with open( fileDir+"/configurations.txt", "r") as configFile:
@@ -458,6 +462,8 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
                     #YP: Added modifyDefaultParameters to configuration file
                     if terms[0].strip() == "modifyDefaultParameters":
                         toModifyModelDefaultParas = (terms[1].strip() == "True")
+                    if terms[0].strip() == 'stretchSize':
+                        stretchSize = int(terms[1].strip())
                     if terms[0].strip() == 'logLevel':
                         logLevel = terms[1].strip()
                     if terms[0].strip() == 'logFile':
@@ -530,9 +536,11 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     (para, rmseTrains, rmseTests) = modelFittingHelper.fitModels(logger, algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes, stats, statIntervals, threshold, gnuplotPath, modelFileName)
 
 
+    #YP: I added an extra 'stretch size' here for predictions beyond the
+    #largest challenge instance size
     #   calculate bootstrap intervals of fitted models
     logger.debug('Fitting models to the bootstrap samples.')
-    (paras, preds) = bootstrapHelper.doBootstrapAnalysis(logger, bStat[0], sizes, runtimes, threshold, statistic, modelNames, modelNumParas, modelFuncs, numBootstrapSamples, gnuplotPath )
+    (paras, preds, stretchPreds) = bootstrapHelper.doBootstrapAnalysis(logger, bStat[0], sizes, runtimes, threshold, statistic, modelNames, modelNumParas, modelFuncs, numBootstrapSamples, gnuplotPath, stretchSize )
 
     #YP: added a function call to check which model is considered the best
     #fit after the bootstrap sampling
@@ -567,6 +575,10 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     logger.debug('Calculating confidence intervals for model predictions')
     (predLos, predUps) = bootstrapHelper.getLoUps( modelNames, preds )
 
+    if(stretchSize > 0):
+        logger.debug('Calculating confidence intervals for model predictions on stretch sizes')
+        (stretchPredLos, stretchPredUps) = bootstrapHelper.getLoUps( modelNames, stretchPreds )
+
     #YP: Testing stuff out here:
     #bootstrapHelper.getRelativeRMSEsAndIntervals(medianTestRMSEGeoMean,stats,obsvLos,obsvUps,predLos,predUps,threshold,sizes,modelNames)
 
@@ -574,6 +586,11 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     csvHelper.genCSV( ".", "table_Bootstrap-intervals.csv", [algName for i in range(threshold, len(sizes))], ["n"] + [modelName+". model confidence intervals" for modelName in modelNames ] + ["observed point estimates", "observed confidence intervals"], [sizes[threshold:]] + getIntervals([predLos[k][threshold:] for k in range(0, len(modelNames))], [predUps[k][threshold:] for k in range(0, len(modelNames))]) + [stats[threshold:]] + getIntervals([obsvLos[threshold:]], [obsvUps[threshold:]]) )
     latexHelper.genTexTableBootstrap( algName, modelNames, sizes, 0, threshold, predLos, predUps, statIntervals, obsvLos, obsvUps, tableBootstrapIntervalsSupportFileName+".tex" )
     latexHelper.genTexTableBootstrap( algName, modelNames, sizes, threshold, len(sizes), predLos, predUps, statIntervals, obsvLos, obsvUps, tableBootstrapIntervalsChallengeFileName+".tex" )
+
+    if(stretchSize > 0):
+        logger.debug('Creating tables with bootstrap intervals of running time predictions for stretch size')    
+        csvHelper.genCSV( ".", "table_Bootstrap-intervals-stretch-size.csv", [algName for i in range(threshold, len(sizes))], ["n"] + [modelName+". Model confidence interval" for modelName in modelNames ] + [modelName+". Model median prediction" for modelName in modelNames], [[stretchSize*(10**i) for i in [0,1]]] + getIntervals([stretchPredLos[k] for k in range(0, len(modelNames))], [stretchPredUps[k] for k in range(0, len(modelNames))]) + [[summarizeRuntimes.calStatistic( stretchPreds[k][0], 'median'), summarizeRuntimes.calStatistic( stretchPreds[k][1], 'median')] for k in range(0,len(modelNames))] )
+
 
     #   add above data into gnuplot files
     logger.debug('Setting up gnuplot figure files.')
