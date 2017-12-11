@@ -418,7 +418,7 @@ def calWithinIntervals(data,los,ups,threshold,largerHalfIdx,k):
     return (perAboveIntervals, perAboveIntervalsLarger, perWithinIntervals, perWithinIntervalsLarger, perBelowIntervals, perBelowIntervalsLarger)
 
 
-def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the problem instances", modelFileName="models.txt", threshold=0, alpha=95, numBootstrapSamples=100, statistic="median", toModifyModelDefaultParas=False, tableDetailsSupportFileName="table_Details-dataset-support", tableDetailsChallengeFileName="table_Details-dataset-challenge", tableFittedModelsFileName="table_Fitted-models", tableBootstrapIntervalsParaFileName="table_Bootstrap-intervals-of-parameters", tableBootstrapIntervalsSupportFileName="table_Bootstrap-intervals_support", tableBootstrapIntervalsChallengeFileName="table_Bootstrap-intervals_challenge", figureCdfsFileName="cdfs", figureFittedModelsFileName="fittedModels", figureFittedResiduesFileName="fittedResidues", latexTemplate = "template-AutoScaling.tex", modelPlotTemplate = "template-plotModels.plt", residuePlotTemplate = "template-plotResidues.plt", gnuplotPath = 'auto', numRunsPerInstance = 0, perInstanceStatistic="median", numPerInstanceBootstrapSamples=10,logLevel = "INFO", logFile='stdout', stretchSize=-1):
+def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the problem instances", modelFileName="models.txt", threshold=0, alpha=95, numBootstrapSamples=100, statistic="median", toModifyModelDefaultParas=False, tableDetailsSupportFileName="table_Details-dataset-support", tableDetailsChallengeFileName="table_Details-dataset-challenge", tableFittedModelsFileName="table_Fitted-models", tableBootstrapIntervalsParaFileName="table_Bootstrap-intervals-of-parameters", tableBootstrapIntervalsSupportFileName="table_Bootstrap-intervals_support", tableBootstrapIntervalsChallengeFileName="table_Bootstrap-intervals_challenge", figureCdfsFileName="cdfs", figureFittedModelsFileName="fittedModels", figureFittedResiduesFileName="fittedResidues", latexTemplate = "template-AutoScaling.tex", modelPlotTemplate = "template-plotModels.plt", residuePlotTemplate = "template-plotResidues.plt", gnuplotPath = 'auto', numRunsPerInstance = 0, perInstanceStatistic="median", numPerInstanceBootstrapSamples=10,logLevel = "INFO", logFile='stdout', stretchSize=[]):
     #   get parameter values
     if os.path.exists( fileDir+"/configurations.txt" ):
         with open( fileDir+"/configurations.txt", "r") as configFile:
@@ -463,7 +463,15 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
                     if terms[0].strip() == "modifyDefaultParameters":
                         toModifyModelDefaultParas = (terms[1].strip() == "True")
                     if terms[0].strip() == 'stretchSize':
-                        stretchSize = int(terms[1].strip())
+                        if('[' in terms[1]):
+                            stretchSize = []
+                            for item in terms[1].strip().replace('[','').replace(']','').split(','):
+                                stretchSize.append(float(item))
+                            
+                        else:
+                            stretchSize = [int(terms[1].strip())]
+                        stretchSize = sorted(stretchSize)
+                        stretchSize.append(stretchSize[-1]*10)
                     if terms[0].strip() == 'logLevel':
                         logLevel = terms[1].strip()
                     if terms[0].strip() == 'logFile':
@@ -575,7 +583,7 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     logger.debug('Calculating confidence intervals for model predictions')
     (predLos, predUps) = bootstrapHelper.getLoUps( modelNames, preds )
 
-    if(stretchSize > 0):
+    if(len(stretchSize) > 0):
         logger.debug('Calculating confidence intervals for model predictions on stretch sizes')
         (stretchPredLos, stretchPredUps) = bootstrapHelper.getLoUps( modelNames, stretchPreds )
 
@@ -587,9 +595,9 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     latexHelper.genTexTableBootstrap( algName, modelNames, sizes, 0, threshold, predLos, predUps, statIntervals, obsvLos, obsvUps, tableBootstrapIntervalsSupportFileName+".tex" )
     latexHelper.genTexTableBootstrap( algName, modelNames, sizes, threshold, len(sizes), predLos, predUps, statIntervals, obsvLos, obsvUps, tableBootstrapIntervalsChallengeFileName+".tex" )
 
-    if(stretchSize > 0):
+    if(len(stretchSize) > 0):
         logger.debug('Creating tables with bootstrap intervals of running time predictions for stretch size')    
-        csvHelper.genCSV( ".", "table_Bootstrap-intervals-stretch-size.csv", [algName for i in range(threshold, len(sizes))], ["n"] + [modelName+". Model confidence interval" for modelName in modelNames ] + [modelName+". Model median prediction" for modelName in modelNames], [[stretchSize*(10**i) for i in [0,1]]] + getIntervals([stretchPredLos[k] for k in range(0, len(modelNames))], [stretchPredUps[k] for k in range(0, len(modelNames))]) + [[summarizeRuntimes.calStatistic( stretchPreds[k][0], 'median'), summarizeRuntimes.calStatistic( stretchPreds[k][1], 'median')] for k in range(0,len(modelNames))] )
+        csvHelper.genCSV( ".", "table_Bootstrap-intervals-stretch-size.csv", [algName for i in range(threshold, len(sizes))], ["n"] + [modelName+". Model confidence interval" for modelName in modelNames ] + [modelName+". Model median prediction" for modelName in modelNames], [[ss for ss in stretchSize]] + getIntervals([stretchPredLos[k] for k in range(0, len(modelNames))], [stretchPredUps[k] for k in range(0, len(modelNames))]) + [[summarizeRuntimes.calStatistic( stretchPreds[k][j], 'median') for j in range(0,len(stretchSize))] for k in range(0,len(modelNames))] )
 
 
     #   add above data into gnuplot files

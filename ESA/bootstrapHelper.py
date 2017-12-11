@@ -125,7 +125,7 @@ def readBootstrapDatFile( modelNames, modelNumParas, modelFuncs, sizes, stretchS
             paras[k].append( [] )
         for j in range(0, len(sizes)):
             preds[k].append( [] )
-        for j in [0,1]:
+        for ss in stretchSize:
             stretchPreds[k].append( [] )
 
     for k in range(0, len(modelNames)):
@@ -140,9 +140,11 @@ def readBootstrapDatFile( modelNames, modelNumParas, modelFuncs, sizes, stretchS
                 for j in range(0, len(sizes)):
                     preds[k][j].append( modelFuncs[k]( [ paras[k][i][-1] for i in range(0,modelNumParas[k]) ], sizes[j] ) )
                 #YP: Added an extra 'stretch' prediction size here for predictions beyond the challenge instance size
-                if(stretchSize > 0):
-                    for j in [0,1]:
-                        stretchPreds[k][j].append( modelFuncs[k]( [ paras[k][i][-1] for i in range(0,modelNumParas[k]) ], stretchSize*(10**j) ) )
+                if(len(stretchSize) > 0):
+                    j = 0
+                    for ss in stretchSize:
+                        stretchPreds[k][j].append( modelFuncs[k]( [ paras[k][i][-1] for i in range(0,modelNumParas[k]) ], ss ) )
+                        j += 1
 
     return paras, preds, stretchPreds
 
