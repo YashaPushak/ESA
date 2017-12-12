@@ -471,7 +471,7 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
                         else:
                             stretchSize = [int(terms[1].strip())]
                         stretchSize = sorted(stretchSize)
-                        stretchSize.append(stretchSize[-1]*10)
+                        #stretchSize.append(stretchSize[-1]*10)
                     if terms[0].strip() == 'logLevel':
                         logLevel = terms[1].strip()
                     if terms[0].strip() == 'logFile':
