@@ -3,67 +3,145 @@ import os
 import math
 import csvHelper
 import latexHelper
+import numpy as np
+import userDefinitions as ud
 
-def fillModelRepsWValues( modelRep, valueTuple ):
-    while modelRep.find("@@") > -1:
-        stIdx = modelRep.find("@@")
-        edIdx = modelRep.find("@@", stIdx+2)+2
-        if edIdx<2:
-            break
-        elif edIdx!=stIdx+5:
-            print modelRep
-            raise Exception
-        id = modelRep[stIdx+2]
-        modelRep = modelRep[0:stIdx] + valueTuple[ord(id)-ord('a')] + modelRep[edIdx:]
-    return modelRep
 
-def genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes, threshold, para, rmseTrains, rmseTests, texFileName="table_Fitted-models.tex"):
-    res = ""
-    res += "\\begin{tabular}{ccccc} \n"
-    res += "\\hline \n"
-    res += " &  & \multirow{2}{*}{Model} & RMSE  & RMSE\\tabularnewline \n"
-    res += " &  &  & (support)  & (challenge)\\tabularnewline \n"
-    res += "\\hline \n"
-    res += "\\hline \n"
-    for i in range(0, len(modelNames)):
-        if i == 0:
-            res += "\\multirow{%d}{*}{%s}" % (len(modelNames), latexHelper.escapeNonAlNumChars( algName ) )
-        if rmseTests[i][0] == min(rmseTests)[0]:
-            modelParasTuple = ()
-            for k in range(0, modelNumParas[i]):
-                modelParasTuple += ( latexHelper.numToTex(para[i][k], 5), )
-            res += latexHelper.prepareTableRow(" & %s. Model" % modelNames[i], \
-                [ latexHelper.bold( fillModelRepsWValues( modelReps[i], modelParasTuple ), True ), \
-                latexHelper.bold( latexHelper.numToTex(rmseTrains[i], 5), True ), \
-                latexHelper.bold( latexHelper.numToTex(rmseTests[i][0], 5), True ) if rmseTests[i][0]==rmseTests[i][1] else latexHelper.genInterval( latexHelper.numToTex(rmseTests[i][0], 5), latexHelper.numToTex(rmseTests[i][1], 5), 1) ] ) 
+def adjustResiduals(r,statistic):
+    if(statistic == 'mean'):
+        return r**2
+    else:
+        if(statistic == 'median'):
+            quantile = 0.5
         else:
-            modelParasTuple = ()
-            for k in range(0, modelNumParas[i]):
-                modelParasTuple += ( latexHelper.numToTex(para[i][k], 5) ,)
-            res += latexHelper.prepareTableRow(" & %s. Model" % modelNames[i], \
-                [ "$%s$" % fillModelRepsWValues( modelReps[i], modelParasTuple ), \
-                "$%s$" % latexHelper.numToTex( rmseTrains[i] , 5 ), \
-                "$%s$" % latexHelper.numToTex( rmseTests[i][0], 5 ) if rmseTests[i][0]==rmseTests[i][1] else latexHelper.genInterval( latexHelper.numToTex(rmseTests[i][0], 5), latexHelper.numToTex(rmseTests[i][1], 5) ) ] )
-        #    " & $6.89157\\times10^{-4}\\text{\\ensuremath{\\times}}1.00798{}^{n}$  & 0.0008564  & 0.7600")
-    res += "\\hline \n"
-    res += "\end{tabular} \n"
-    with open(texFileName, "w") as texFile:
-        print >>texFile, res
+            if('q' == statistic[0].lower()):
+                statistic = statistic[1:]
+            quantile = float(statistic)
+        return np.where(r<0,r*(quantile)*2,r*(1-quantile)*2)
+  
 
-def fitModels(logger, algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes, medians, medianIntervals, threshold, gnuplotPath, modelFileName ):
-    #YP: added some extra exception handling and error checking in case
-    #gnuplot is unavailable
-    os.system(gnuplotPath + "gnuplot fitModels.plt >& fit.log")
-    with open('fit.log') as f_fit:
-        fileText = f_fit.read()
-        if('No such file or directory' in fileText):
-            logger.error('Unable to run gnuplot.')
-            logger.error('Please ensure gnuplot is in your path, or verify that you have correctly entered the path in the configuration file using the \'gnuplotPath\' variable.')
-            raise Exception("Gnuplot not found")
-        elif('After 1 iterations the fit converged' in fileText):
-            failedModel = fileText.split('After 1 iterations the fit converged')[0].split('lambda')[-1].split('_p0')[0].strip()
-            logger.warning('The ' + failedModel + ' model converged after only 1 iteration. This is often a sign that the model is a very bad fit for the data (or that the default fitting parameters you choose were very good).')
+def getLoss(residuals,statistic):
+    return sum(abs(adjustResiduals(residuals,statistic)))
 
+
+def getLosses(logger, fittedModels, modelNames, sizes, runtimes, statistic):
+    #Author: YP
+    #Created: 2019-01-04
+    #returns the losses for each model.
+
+    losses = []
+
+    for i in range(0,len(modelNames)):
+        losses.append(getLoss(ud.evalModel(sizes,fittedModels[i],modelNames[i])-runtimes,statistic))
+
+    return losses
+
+
+def getResidues(logger, statx, staty, fittedModels, modelNames):
+    #Author: YP
+    #Created; 2019-01-08
+    #Calculates the residues of the fitted models
+    #from the fitted observations 
+
+    staty = np.array(staty)
+
+    residues = []
+
+    for i in range(0,len(modelNames)):
+        residues.append(staty - ud.evalModel(statx,fittedModels[i],modelNames[i]))
+
+    return residues
+
+
+def fitModelIRLS(logger, modelName, statx, staty, sizes, runtimes, statistic, delta=1e-4):
+    #Author: YP
+    #Created: 2018-11-14
+    #last udpated: 2019-01-04
+    #A new method that uses iteratively reweighted linear least squares to fit
+    #the models to the log of the running times (or any other user-defined approximatation to
+    #the optimization problem). We further modify the weights by
+    #Mutliplying them by the running times so that longer running times are heuristically
+    #weighted more (since we are downweighting them when we take their log to make the
+    #Problem more tractable).
+
+    sizes = np.array(sizes)
+    runtimes = np.array(runtimes)
+
+    a = ud.fitModelLS(statx,staty,modelName)
+    newLoss = getLoss(ud.evalModel(sizes,a,modelName)-runtimes,statistic)
+    oldLoss = newLoss
+
+    #Use up to 100 iterations of the generalized iteratively reweighted linear least squares
+    #to perform quantile regression.
+    #We still use an iterated aproach even for fitting the mean, because we are performing a
+    #weighted optimization procedure where the weights are defined by the previous iteration's
+    #fitted model, so we need to allow the method to converge for the mean as well. 
+    #IF the user is using a custom deisgned optimization procedure that is not iterative, then 
+    #we are approximately doubling the running time of ESA here, because it will run twice, and assuming
+    #It is a good procedure it should return losses within delta almost immediately, and hence it
+    #should "converege" very quickly.
+    maxIters = 100
+    if(statistic == 'median'):
+        statistic = 'q0.5'
+
+    for i in range(0,maxIters):
+        if(not statistic == 'mean'):
+            #logger.debug("Original residuals: " + str(ud.getResiduals(sizes,runtimes,a,modelName)[0:10]))
+            #We take one minus the quantile because we are dividing by the residuals when we turn them into weights. 
+            residuals = abs(adjustResiduals(ud.getResiduals(sizes,runtimes,a,modelName),'q' + str(1-float(statistic[1:]))))
+            #logger.debug("Adjusted residuals: " + str(residuals[0:10]))
+            #min residual size to avoid numerical instability
+            residuals[np.where(residuals < delta)] = delta
+            #Normal IRLLS would just use W = np.diag(1.0/residuals)
+            #we further multiple by "runtimes" to provide additional weight
+            #to the instances with larger running times.
+            W = 1.0/residuals
+        else:
+            #We don't need to use a 
+            W = np.ones(len(sizes))
+        
+        oldA = a
+        a = ud.fitModelLS(sizes,runtimes,modelName,W,oldA)
+        newLoss = getLoss(ud.evalModel(sizes,a,modelName) - runtimes,statistic)
+
+        if(oldLoss-newLoss < delta):
+            if(oldLoss < newLoss):
+                #The objective function loss can start to get worse, since we're only
+                #approximately the true objective function with an easier one here.
+                #If that happens, we can just stop early and use the best-known
+                #solution.
+                newLoss = oldLoss
+                a = oldA
+            break
+        oldLoss = newLoss
+
+    a = np.array(a)
+
+    return a, newLoss
+
+
+
+def fitModels(logger, modelNames, statx, staty, sizes, runtimes, statistic):
+    #Author: YP
+    #Created: 2019-01-04
+    #Last updated: 2019-01-04
+
+    fittedModels = []
+    losses = []
+
+    for modelName in modelNames:   
+        a, loss = fitModelIRLS(logger, modelName, statx, staty, sizes, runtimes, statistic)
+        fittedModels.append(a)
+        losses.append(loss)
+
+    #logger.debug("Fitted Models: " + str(fittedModels))
+
+    return fittedModels, losses
+
+
+
+
+def unused():
     para = []
     for k in range(0, len(modelNames)):
         para.append( [] )
@@ -127,17 +205,5 @@ def fitModels(logger, algName, modelNames, modelNumParas, modelReps, modelFuncs,
     #functions so that I can replace some of the data with statistics
     #from the bootstrap models.
     return (para, seTrains, seTests)
-
-
-def makeTableFittedModels(para, rmseTrains, rmseTests, modelNumParas, modelReps, modelNames, threshold, algName, sizes):
-    #Author: Yasha Pushak
-    #First Created: November 17th, 2016 (Approx.)
-    #Last updated: March 20th, 2017
-    #I pulled the original code for this out of the fitModels function
-    #and created a new one here. 
-    csvHelper.genCSV( ".", "table_Fitted-models.csv", ["Model", "RMSE (support)", "RMSE (challenge)"], \
-        [ algName+" "+modelName+". Model" for modelName in modelNames ], \
-        [ [ para[k], rmseTrains[k], rmseTests[k]] for k in range(0, len(modelNames)) ] )
-    genFittedModelsTexTable(algName, modelNames, modelNumParas, modelReps, sizes, threshold, para, rmseTrains, rmseTests)
 
 

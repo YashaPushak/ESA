@@ -1,57 +1,94 @@
 import os
-import numpy
+import numpy as np
 import math
 import random
 import summarizeRuntimes
 import csvHelper
 import latexHelper
-
-def doBootstrap(logger, data, numInsts, numSamples, statistic, perInstanceStatistic, numSamplesPerInstance):
-    #Author: Zongxu Mu, Yasha Pushak
-    #Last updated: February 7th, 2017
-    #For the bootstrap samples of statistics of nested bootstrap samples
-    bStat = [[],[]]
-    #For the per-instance statistics of bootstrap samples for each instance
-    bData = []
-    for j in range(0, len(data)):
-        bStat[0].append( [] )
-        bStat[1].append( [] )
-
-    if(len(data[0][0]) > 1):
-        #Generate the inner bootstrap samples
-        for size in range(0, len(data)):
-            bData.append([])
-            for inst in range(0, len(data[size])):
-                bData[size].append([])
-                for b in range(0,numSamplesPerInstance):
-                    bTmpInstData = []
-                    for i in range(0,len(data[size][inst])):
-                        p = random.randrange(0,len(data[size][inst]))
-                        bTmpInstData.append(data[size][inst][p])
-                    bData[size][inst].append(summarizeRuntimes.calStatistic( bTmpInstData, perInstanceStatistic))
-            logger.info('Nested bootstrap samples for ' + str(size+1) + ' instance sizes made...')
-    else:
-        #bootstrap samples will all be degenerate here, so there's no use
-        #in making any.
-        bData = data
+import modelFittingHelper
+import userDefinitions as ud
 
 
-    for i in range(0, numSamples):
-        for j in range(0, len(data)):
-            bTmpData = []
-            size = numInsts[j]  #len(data[j])
-            for k in range(0, size):
-                p = random.randrange(0, size)
-                if p<len(data[j]):
-                    #YP: Select one of the nested bootstrap sample statistics.
-                    q = random.randrange(0,len(bData[j][p]))
-                    bTmpData.append( bData[j][p][q] )
+def makeBootstrapSamples(runtimes, sizes, numBootstrap, window, perInstanceStatistic, numBootstrapPerInstance):
+    #Author: YP 
+    #Created: 2019-01-02
+    if(window%2 == 0):
+       window += 1 #We must have an odd-numbered window so that we can center the window on a point.
 
-            bStat[0][j].append( summarizeRuntimes.calStatistic( bTmpData+[ 0 for ind in range(0, size-len(bTmpData)) ], statistic ) )
-            bStat[1][j].append( summarizeRuntimes.calStatistic( bTmpData+[ float('inf') for ind in range(0, size-len(bTmpData)) ], statistic ) )
+    #Start with the original indices for each of the bootstrap samples
+    indsMajorOnce = np.array([range(0,len(runtimes))]*numBootstrap)
+    #Add a random offset to each index from within the window.
+    indsMajorOnce += np.random.randint(-window/2,window/2+1,(numBootstrap,len(runtimes)))
+    #Wrap around at the edges.
+    indsMajorOnce = np.mod(indsMajorOnce,len(runtimes))
+    indsMajorMany = np.array([[[b]*len(runtimes[0]) for b in a] for a in indsMajorOnce])
+    #Subsample the independent runs per instance
+    indsMinor = np.random.randint(0,len(runtimes[0]),(numBootstrap,len(runtimes),len(runtimes[0])))
+    #Create the bootstrap samples
+    bruntimes = np.array(runtimes)[(indsMajorMany,indsMinor)]
+    #Calculate the per-instance statistics
+    bruntimes = np.apply_along_axis(lambda k: summarizeRuntimes.calStatistic(k,perInstanceStatistic),2,bruntimes)
+    bsizes = np.array(sizes)[indsMajorOnce]
+    
+    return bruntimes, bsizes
+
+
+
+def calObsIntervals(logger,bruntimes,bsizes,statistic,numBootstrap,windowSize,statxObsvs,alpha):
+    statsX = []
+    statsY = []
+    statsW = []
+    for i in range(0,numBootstrap):
+        runtimes = bruntimes[i,:]
+        sizes = bsizes[i,:]
+        staty, statw = summarizeRuntimes.calObsvStats(runtimes,sizes,statistic,windowSize,statxObsvs)
+        statsX.append(statxObsvs)
+        statsY.append(staty)
+        statsW.append(statw)
         if(i%10 == 9):
-            logger.info(str(i+1) + " bootstrap samples made...")
-    return bStat
+            logger.debug('Statistics fitted to ' + str(i+1) + ' bootstrap samples...')
+
+    statBounds = []
+    statMedians = []
+    statSizes = []
+    printed = [False]*11
+    printed[0] = True
+
+    completed = 0
+    for size in statxObsvs: 
+        completed += 1
+        lst = []
+        for i in range(0,numBootstrap):
+            #print(statsX[i])
+            #print(size)
+            ind = np.argmax(np.array(statsX[i])>=size)
+            if(statsX[i][ind] == size):
+                lst.append(statsY[i][ind])
+            elif(statsX[i][ind] > size):
+                if(ind == 0):
+                    #Nothing is larger than this value, for now we just add the smallest size
+                    lst.append(statsY[i][ind])
+                else:
+                    #Interpolate between the two nearest data points
+                    totalDist = float(statsX[i][ind] - statsX[i][ind-1])
+                    partDist = float(size - statsX[i][ind-1])
+                    lst.append(statsY[i][ind-1]*(1 - partDist/totalDist) + statsY[i][ind]*(partDist/totalDist))
+            else:
+                #The above returns 0 if there is nothing larger, in which case we will just take the largest value we have for now.
+                lst.append(statsY[i][-1])
+        statSizes.append(size)
+        statBounds.append([summarizeRuntimes.calStatistic(lst,'q' + str((100-alpha)/2.0)),summarizeRuntimes.calStatistic(lst,'q' + str(100-(100-alpha)/2.0))])
+
+        percentDone = float(completed)/len(statxObsvs)
+        printedIndex = min(int(percentDone*10),len(printed)-1)
+        if(not printed[printedIndex]):
+            print("Intervals calculated for " + str(int(percentDone*100)) + "% of instance sizes...")
+            printed[printedIndex] = True
+
+
+    return statBounds, statsY
+
+
 
 def getBootstrapIntervals(bStat, alpha=95):
     #bStat = doBootstrap(data, numInsts, numSamples, statistic, perInstanceStatistic)
@@ -60,6 +97,81 @@ def getBootstrapIntervals(bStat, alpha=95):
     los = [ summarizeRuntimes.calStatistic(d, "Q%f"%(50-alpha/2.0)) for d in bStat[0] ]
     ups = [ summarizeRuntimes.calStatistic(d, "Q%f"%(50+alpha/2.0)) for d in bStat[1] ]
     return (los, ups)
+
+
+def fitBootstrapModels(logger, modelNames, statx, bstaty, bsizes, bruntimes, statistic):
+    #Author: YP
+    #Created; 2019-01-04
+    #Fits the models to the bootstrap samples.
+
+    bfittedModels = []
+    blosses = []
+    for j in range(0,len(modelNames)):
+        bfittedModels.append([])
+        blosses.append([])
+
+    for i in range(0,len(bstaty)):
+        staty = bstaty[i]
+        sizes = bsizes[i]
+        runtimes = bruntimes[i]
+
+        fittedModels, losses = modelFittingHelper.fitModels(logger, modelNames, statx, staty, sizes, runtimes, statistic)
+
+        if i%10 == 9:
+            logger.info("%d models fitted to bootstrap samples..." % (i+1))
+ 
+        for j in range(0,len(modelNames)):
+            bfittedModels[j].append(fittedModels[j])
+            blosses[j].append(losses[j])
+
+    return bfittedModels, blosses
+
+
+def makePredictions(logger, bfittedModels, modelNames, statxTrain, statxTest):
+    #Author: YP
+    #Created: 2019-01-07
+    #Calculated the model predictions for the bootstrap models
+    #and returns them.
+
+    predsTrain = []
+    predsTest = []
+    #preds[model number][size number][bootstrap number] = prediction
+
+    for i in range(0,len(modelNames)):
+        predsTrain.append([])
+        predsTest.append([])
+        for x in statxTrain:
+            predsTrain[-1].append([])
+        for x in statxTest:
+            predsTest[-1].append([])
+        
+        for a in bfittedModels[i]:
+            preds = ud.evalModel(statxTrain,a,modelNames[i])
+            for j in range(0,len(preds)):
+                predsTrain[-1][j].append(preds[j])
+            preds = ud.evalModel(statxTest,a,modelNames[i])
+            for j in range(0,len(preds)):
+                predsTest[-1][j].append(preds[j])
+
+    return predsTrain, predsTest
+        
+
+def getLosses(logger, bfittedModels, modelNames, bsizes, bruntimes, statistic):
+    #Author: YP
+    #Created; 2019-01-04
+    #Get the losses for the bootstrap models. 
+
+    #losses[model number][bootstrap number] = loss
+    blosses = []
+
+    for i in range(0,len(modelNames)):
+        blosses.append([])
+
+        for j in range(0,len(bfittedModels[i])):
+            blosses[-1].append(modelFittingHelper.getLoss(ud.evalModel(bsizes[j],bfittedModels[i][j],modelNames[i])-bruntimes[i],statistic))
+
+    return blosses
+
 
 def doBootstrapAnalysis(logger, bStat, sizes, data, threshold, statistic, modelNames, modelNumParas, modelFuncs, numSamples, gnuplotPath, stretchSize, alpha=95):
     #bStat = doBootstrap(data, numInsts, numSamples, statistic, perInstanceStatistic)[0]
@@ -148,16 +260,36 @@ def readBootstrapDatFile( modelNames, modelNumParas, modelFuncs, sizes, stretchS
 
     return paras, preds, stretchPreds
 
-def getLoUps( modelNames, data, alpha=95 ):
+
+def getLoUps( modelNames, data, alpha):
     dataLos = []
     dataUps = []
+    
     for k in range(0, len(modelNames)):
         #dataLos.append( [ numpy.percentile(d, 50-alpha/2.0) for d in data[k] ] )
         #dataUps.append( [ numpy.percentile(d, 50+alpha/2.0) for d in data[k] ] )
         dataLos.append( [ summarizeRuntimes.calStatistic(d, 'Q%f'%(50-alpha/2.0)) for d in data[k] ] )
         dataUps.append( [ summarizeRuntimes.calStatistic(d, 'Q%f'%(50+alpha/2.0)) for d in data[k] ] )
-    return (dataLos, dataUps)
+    return dataLos, dataUps
 
+
+def getLossIntervals(logger, blossesTrain, blossesTest, alpha):
+    #Author: YP
+    #Created: 2019-01-04
+    #Calculates intervals for the training and test losses.
+
+    ilossTrain = []
+    ilossTest = []
+
+    for i in range(0,len(blossesTrain)):
+        lo = summarizeRuntimes.calStatistic(blossesTrain[i],'q' + str(50-alpha/2.0))
+        up = summarizeRuntimes.calStatistic(blossesTrain[i],'q' + str(50+alpha/2.0))
+        ilossTrain.append([lo,up])
+        lo = summarizeRuntimes.calStatistic(blossesTest[i],'q' + str(50-alpha/2.0))
+        up = summarizeRuntimes.calStatistic(blossesTest[i],'q' + str(50+alpha/2.0))
+        ilossTest.append([lo,up])
+        
+    return ilossTrain, ilossTest
 
 
 def getBootstrapRMSE(preds, bStat, sizes, threshold, modelNames, alpha=95):
@@ -604,4 +736,52 @@ def getRelativeRMSEsAndIntervals(testRMSE,stats,obsvLos,obsvUps,predLos,predUps,
         for s in range(threshold,len(sizes)):
             f_out.write(', ' + str(obsvIntSize[s]))
         f_out.write('\n')
-        
+       
+
+def getResidueBounds(logger, bstaty, bpreds, alpha):
+    #Author: YP
+    #Created: 2019-01-09
+    #updated: 2019-01-09
+
+    residues = []
+
+    bstaty = np.array(bstaty)
+    bpreds = np.array(bpreds)
+
+    #print(bstaty)
+
+    for i in range(0,len(bpreds)):
+        residues.append(bstaty - np.transpose(bpreds[i]))
+       
+    iresidues = []
+
+    for i in range(0,len(residues)):
+        los = np.apply_along_axis(lambda k: summarizeRuntimes.calStatistic(k,'q' + str(50 - alpha/2.0)),0,residues[i])
+        ups = np.apply_along_axis(lambda k: summarizeRuntimes.calStatistic(k,'q' + str(50 + alpha/2.0)),0,residues[i])
+
+        iresidues.append([los,ups])
+
+
+    return iresidues    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 

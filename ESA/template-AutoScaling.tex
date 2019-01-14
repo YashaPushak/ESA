@@ -10,7 +10,8 @@
 %%	- instName, e.g., ``random 3SAT at phase transition''
 %%	- models, e.g., ``\\begin{itemize}\n\\item $Exp\\left[a,b\\right]\\left(n\\right)=a\\cdot b^{n}$ \\quad{}(2-parameter exponential);\n\\end{itemize}''
 %%	- numBootstrapSamples, the number of bootstrap samples used in the analysis, e.g., 1000
-%%	- numSizes, the number of sizes used in the analysis, e.g., 12
+%%	- numInsts, the number of instances used in the analysis, e.g., 1200
+%%      - numInsts[Train,Test], the number of instances used as support/challenge data in the anlaysis, e.g., 600.
 %%	- largestSupportSize, e.g., 500
 %%	- table-Details-dataset, e.g., ``\\input{table_Details-dataset}''
 %%	- table-Details-dataset, e.g., ``\\input{table_Details-dataset}''
@@ -147,8 +148,8 @@ point estimate less the predicted value.
 \section{Dataset Description}
 
 The dataset contains running times of the @@algName@@ algorithm solving
-@@numSizes@@ sets of instances of different sizes \randomizedAlgorithm{with @@numRunsPerInstance@@ independent runs per instance}. We split the running times into
-two categories, support ($n\leq@@largestSupportSize@@$) and challenge ($n>@@largestSupportSize@@$). The
+@@numInsts@@ instances of different sizes \randomizedAlgorithm{with @@numRunsPerInstance@@ independent runs per instance}. We split the running times into
+two categories, support ($n\leq@@largestSupportSize@@$) and challenge ($n>@@largestSupportSize@@$) with @@numInstsTrain@@ and @@numInstsTest@@, respectively.. The
 details of the dataset can be found in Tables \ref{tab:Details-dataset-support} 
 and \ref{tab:Details-dataset-challenge}.
 \begin{table*}

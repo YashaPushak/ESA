@@ -1,26 +1,25 @@
-#!/gnuplot
 
 set terminal pdfcairo dashed fontscale 0.5
-set termopt enhanced
-#set logscale
+set termoption enhanced
+#set terminal qt font "Helvetica,24"
 set log x
 set log y
-set xlabel 'n'
-set ylabel 'CPU time [sec]'
 set format y "10^{%T}"
-set key top left 
-#set key right bottom
-set xtics auto
-#(100, 200, 500, 1000)
 set grid xtics ytics mxtics mytics lc rgb '#999999' lw 1 lt 0
-set style fill transparent solid 0.2 noborder
-#
-#set output 'fittedModels_loglog.pdf'
-#plot [100:1100]\
-#    'gnuplotTrainFile.txt' title 'Support Data' lc 1, \
-#    'gnuplotTestFile.txt' title 'Challenge Data' lc 7, \
-#    'gnuplotTestFile.txt' using 1:5:6 with filledcurves lc 3 title 'Exp. Model Bootstrap Intervals', \
-#    'gnuplotTestFile.txt' using 1:7:8 with filledcurves lc 4 title 'Poly. Model Bootstrap Intervals', \
-#    e(x) w l lt 2 lc 3 title sprintf('Exp. Model: %2.5e {/Symbol \264} %2.5f^n', ae, be), \
-#    p(x) w l lt 2 lc 4 title sprintf('Poly. Model: %2.5e {/Symbol \264} n^{%2.5f}', ap, bp)
-#
+set xtics add (1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000)
+set xrange[@@minSize@@/1.1:@@maxSize@@*1.1]
+set yrange[@@minTime@@/10:@@maxTime@@*10]
+set key top left spacing 0.8
+
+#set format x "%2.0tx10^{%L}"
+#set format y "%2.0tx10^{%L}"
+
+set ytics (0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 1000000)
+#set ytics add ("Censored" @@minNonZero@@/10.0, "Censored" @@cutoff@@)
+
+set ylabel "CPU time [sec]"
+set xlabel "n"
+
+set style fill transparent solid 0.3 noborder
+
+set arrow from @@thresholdSize@@,graph 0 to @@thresholdSize@@,graph 1 nohead lc 'black' dt 3

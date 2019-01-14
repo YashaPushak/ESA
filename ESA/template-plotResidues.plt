@@ -14,6 +14,8 @@ set key left bottom
 set grid xtics ytics mxtics mytics lc rgb '#999999' lw 1 lt 0
 set style fill transparent solid 0.2 noborder
 
+set arrow from @@thresholdSize@@,graph 0 to @@thresholdSize@@,graph 1 nohead lc 'black' dt 3
+
 #set output 'fittedModels_residues.pdf'
 #plot [100:1100]\
 #    'residueFile.txt' using 1:2 w l lc 3 title 'Exp. Model Residues', \
