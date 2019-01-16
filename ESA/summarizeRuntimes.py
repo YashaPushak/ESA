@@ -16,8 +16,8 @@ def calStatistic( list, statistic ):
             percent *= 100
 
         for elem in list:
-            if(not type(elem) == float):
-                print(elem)
+            if(not (type(elem) == float or type(elem) == int)):
+                print("calStatistic: " + str(elem))
             if(math.isnan(elem)):
                 return float('NaN')
 
