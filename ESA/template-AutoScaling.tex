@@ -67,7 +67,7 @@ This is the automatically generated report on the empirical scaling
 of the running time of @@algName@@ for solving @@instName@@.
 
 
-\section{Methodology}
+\section{Methodology} %TODO: Update entire section
 
 \label{sec:Methodology}
 
@@ -81,7 +81,7 @@ For our scaling analysis, we considered the following parametric models:
 % \end{itemize}
 Note that the approach could be easily extended to other scaling models.
 For fitting parametric scaling models to observed data, we used the
-non-linear least-squares Levenberg-Marquardt algorithm.
+non-linear least-squares Levenberg-Marquardt algorithm. 
 
 % what we fitted the models to, how we assessed model fit
 Models were fitted to performance observations in the form of @@statistic@@s
@@ -259,17 +259,17 @@ of model parameters for the @@statistic@@s of the \randomizedAlgorithm{per-insta
 \bigskip
 
 \noindent \begin{centering}
-@@table-Bootstrap-model-RMSE@@
-% \input{table_Bootstrap-model-RMSE}
+@@table-Bootstrap-model-Loss@@
+% \input{table_Bootstrap-model-Loss}
 
 \par\end{centering}
-\caption{\label{tab:Bootstrap-model-RMSE} \bestBoot{Median and 95\% bootstrap intervals
-of model prediction RMSEs for the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times.
-\medianInterval{To calculate the median RMSEs we used the geometric mean of the intervals for the @@statistic@@s of 
-the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times for each instance size. However, the bootstrap 
-confidence intervals directly capture both sources of uncertainty by reporting the 2.5 and 97.5 
-quantiles of the lower and upper bounds on the RMSEs, respectively.} The models yielding the most 
-accurate predictions (@@winnerSelectRule@@) are shown in boldface. }}
+\caption{\label{tab:Bootstrap-model-RMSE} \bestBoot{95\% bootstrap confidence intervals
+of model prediction losses for the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times.%
+%\medianInterval{To calculate the median RMSEs we used the geometric mean of the intervals for the @@statistic@@s of 
+%the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times for each instance size. However, the bootstrap 
+%confidence intervals directly capture both sources of uncertainty by reporting the 2.5 and 97.5 
+%quantiles of the lower and upper bounds on the RMSEs, respectively.} 
+@@winnerSelectRule@@ }}
 \end{table*}
 
 

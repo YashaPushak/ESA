@@ -58,6 +58,8 @@ def getModels(logger, fileDir, fileName):
     modelFuncs = []
     with open(fileDir+"/"+fileName, "r") as modelFile:
         for line in modelFile:
+            if('#' in line[0]):
+                continue
             terms = line.split(",")
             if len(terms)>4:
                 modelNames.append( terms[0].strip() )
@@ -595,7 +597,7 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     logger.debug('Setting up gnuplot figure files.')
     gnuplotHelper.genGnuplotFiles(modelNames, statxTrain, statxTest, statyTrain, statyTest, statyTrainBounds, statyTestBounds, predTrainLos, predTrainUps, predTestLos, predTestUps, sizesTrain, flattenedRuntimesTrain, sizesTest, flattenedRuntimesTest, residuesTrain, residuesTest, iresiduesTrain, iresiduesTest)
 
-    gnuplotHelper.genGnuplotScripts(logger, algName, modelNames, fittedModels, statistic, sizes, sizeThreshold, runtimesTrain, runtimesTest, modelGnuplotDefs, alpha)
+    gnuplotHelper.genGnuplotScripts(logger, algName, modelNames, fittedModels, statistic, sizes, sizeThreshold, flattenedRuntimesTrain, flattenedRuntimesTest, modelGnuplotDefs, alpha)
 
     #   generate plots
     #YP: Added gnuplotPath

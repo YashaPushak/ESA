@@ -37,7 +37,7 @@ def getModelOrder(fittedModels, modelNames, size):
     return order
 
 
-def genGnuplotScripts(logger, algName, modelNames, fittedModels, statistic, sizes, sizeThreshold, runtimesTrain, runtimesTest, modelGnuplotDefs, alpha):
+def genGnuplotScripts(logger, algName, modelNames, fittedModels, statistic, sizes, sizeThreshold, flattenedRuntimesTrain, flattenedRuntimesTest, modelGnuplotDefs, alpha):
     subs = {}
     subs['stat'] = statistic
     #subs['cutoff'] = int(cutoff)
@@ -45,8 +45,8 @@ def genGnuplotScripts(logger, algName, modelNames, fittedModels, statistic, size
     subs['minSize'] = int(min(sizes))
     subs['maxSize'] = int(max(sizes))
     subs['algName'] = algName
-    subs['maxTime'] = float(max([max(runtimesTrain),max(runtimesTest)]))
-    subs['minTime'] = float(min([min(runtimesTrain),min(runtimesTest)]))
+    subs['maxTime'] = float(max([max(flattenedRuntimesTrain),max(flattenedRuntimesTest)]))
+    subs['minTime'] = float(min([min(flattenedRuntimesTrain),min(flattenedRuntimesTest)]))
 
     modelOrder = getModelOrder(fittedModels, modelNames, int(max(sizes)))
 
