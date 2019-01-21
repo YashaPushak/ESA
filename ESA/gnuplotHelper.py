@@ -38,6 +38,9 @@ def getModelOrder(fittedModels, modelNames, size):
 
 
 def genGnuplotScripts(logger, algName, modelNames, fittedModels, statistic, sizes, sizeThreshold, flattenedRuntimesTrain, flattenedRuntimesTest, modelGnuplotDefs, alpha):
+    flattenedRuntimesTrain = np.array(flattenedRuntimesTrain)
+    flattenedRuntimesTest = np.array(flattenedRuntimesTest)
+
     subs = {}
     subs['stat'] = statistic
     #subs['cutoff'] = int(cutoff)

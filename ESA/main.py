@@ -439,6 +439,8 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
                         numObsv = int(terms[1].strip())
                     if terms[0].strip() == 'window':
                         window = int(terms[1].strip())
+                    if terms[0].strip() == 'runtimeCutoff':
+                        runtimeCutoff = float(terms[1].strip())
 
     numericLevel = getattr(logging, logLevel.upper(), None)
     if not isinstance(numericLevel, int):
@@ -477,7 +479,7 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
   
     #   read in runtimes and summarize
     logger.debug('Reading running times from file.')
-    sizes, runtimes, numInsts, numRunsPerInstance = summarizeRuntimes.getRuntimesFromFile(logger, fileDir, fileName, numRunsPerInstance )
+    sizes, runtimes, numInsts, numRunsPerInstance = summarizeRuntimes.getRuntimesFromFile(logger, fileDir, fileName, numRunsPerInstance, runtimeCutoff)
 
     cwd = os.getcwd()
     os.chdir( fileDir )

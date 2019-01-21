@@ -44,9 +44,10 @@ def calStatisticIntervals( list, statistic, numInsts ):
         return [ calStatistic( list+[ 0 for i in range(0, numInsts-len(list)) ], statistic ), calStatistic( list+[ float('inf') for i in range(0, numInsts-len(list)) ], statistic ) ]
 
 
-def getRuntimesFromFile(logger, dirName, filename, numRunsPerInstance):
+def getRuntimesFromFile(logger, dirName, filename, numRunsPerInstance, runtimeCutoff):
     #Author: YP 
     #Created: 2018-12-17
+    #Updated: 2019-01-21
 
     numWarning = 0
     maxWarnings = 10
@@ -62,13 +63,15 @@ def getRuntimesFromFile(logger, dirName, filename, numRunsPerInstance):
             for i in range(2,len(items)):
                 try:
                     runtime = float(items[i])
+                    if(runtime > runtimeCutoff):
+                        runtime = runtimeCutoff
                 except:
-                    runtime = float('inf')
+                    runtime = runtimeCutoff
                 if(runtime < 0):
-                    runtime = float('inf')
+                    runtime = runtimeCutoff
                     numWarning += 1
                     if(numWarning <= maxWarnings):
-                        logger.warning("Treating running time value of 0 as infinity.")
+                        logger.warning("Treating running time value of 0 as " + str(runtimeCutoff))
                 instRuntimes.append(runtime)
 
             if(numRunsPerInstance == 0):
