@@ -437,6 +437,17 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
                         logFile = terms[1].strip()
                     if terms[0].strip() == 'numObservations':
                         numObsv = int(terms[1].strip())
+                        obsvs = None
+                    if terms[0].strip() == 'observations':
+                       if('[' in terms[1]):
+                            obsvs = []
+                            for item in terms[1].strip().replace('[','').replace(']','').split(','):
+                                obsvs.append(float(item))
+                            
+                       else:
+                            continue
+                       obsvs = sorted(obsvs)
+                       numObsv = len(obsvs)
                     if terms[0].strip() == 'window':
                         window = int(terms[1].strip())
                     if terms[0].strip() == 'runtimeCutoff':
@@ -483,8 +494,8 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
 
     cwd = os.getcwd()
     os.chdir( fileDir )
-    logger.debug('Calculating summary statistics for running times.')
-    sizesTrain, runtimesTrain, flattenedRuntimesTrain, sizesTest, runtimesTest, flattenedRuntimesTest, sizeThreshold, windowSize, statxTrain, statyTrain, statxTest, statyTest = summarizeRuntimes.summarizeRuntimes( sizes, runtimes, numInsts, algName, ".", statistic, perInstanceStatistic, threshold, numObsv, window)
+    logger.info('Calculating summary statistics for running times.')
+    sizesTrain, runtimesTrain, flattenedRuntimesTrain, sizesTest, runtimesTest, flattenedRuntimesTest, sizeThreshold, windowSize, statxTrain, statyTrain, statxTest, statyTest = summarizeRuntimes.summarizeRuntimes(logger, sizes, runtimes, numInsts, algName, ".", statistic, perInstanceStatistic, threshold, numObsv, obsvs, window)
     # stats = [ summarizeRuntimes.calStatistic( runtimes[i], statistic ) for i in range(0, len(sizes)) ]
 
     #   read in model names and definitions
@@ -494,9 +505,9 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
  
 
     #YP: Refactored code to only create bootstrap samples once to save time.
-    logger.debug('Creating bootstrap samples of support data.')
+    logger.info('Creating bootstrap samples of support data.')
     bruntimesTrain, bsizesTrain = bootstrapHelper.makeBootstrapSamples(runtimesTrain, sizesTrain, numBootstrapSamples, window, perInstanceStatistic, numPerInstanceBootstrapSamples)
-    logger.debug('Creating bootstrap samples of challenge data.')
+    logger.info('Creating bootstrap samples of challenge data.')
     bruntimesTest, bsizesTest = bootstrapHelper.makeBootstrapSamples(runtimesTest, sizesTest, numBootstrapSamples, window, perInstanceStatistic, numPerInstanceBootstrapSamples)
 
 

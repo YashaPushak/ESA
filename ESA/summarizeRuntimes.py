@@ -5,6 +5,7 @@ import sys
 import csvHelper
 import latexHelper
 import modelFittingHelper
+import copy as cp 
 
 
 def calStatistic( list, statistic ):
@@ -64,7 +65,7 @@ def getRuntimesFromFile(logger, dirName, filename, numRunsPerInstance, runtimeCu
                 try:
                     runtime = float(items[i])
                     if(runtime > runtimeCutoff):
-                        runtime = runtimeCutoff
+                        runtime = runtimeCutof
                 except:
                     runtime = runtimeCutoff
                 if(runtime < 0):
@@ -78,14 +79,8 @@ def getRuntimesFromFile(logger, dirName, filename, numRunsPerInstance, runtimeCu
                 numRunsPerInstance = len(instRuntimes)
                 updatedNumRunsPerInstance = True
             #Check that the number of running times is consistent.
-            if(not len(instRuntimes) == numRunsPerInstance and not numRunsPerInstance == 'multiple'):
-                if(not updatedNumRunsPerInstance):
-                    numWarning += 1
-                    if(numWarning <= maxWarnings):
-                        logger.warning('Instance ' + items[0] + ' has ' + str(len(instRuntimes)) + ' running times and not the specified ' + str(numRunsPerInstance) + ' running times. We are ignoring the discrepency and continuing; however, per-instance statistics for this instance will be based on the ' + str(len(instRuntimes)) + ' running times, rather than ' + str(numRunsPerInstance))
-                else:
-                    logger.warning('Number of independent runs per instance (numRunsPerInstance) was not specified and the number of running times provided is not consistent across all instances. We are ignoring the discrepency and continuing. The per-instance statistics for each instance will be based on the number of available running times.')
-                numRunsPerInstance = 'multiple'
+            if(not len(instRuntimes) == numRunsPerInstance):
+                raise Exception("The number of runs per instance is inconsistent, starting with instance " + items[0])
 
             sizes.append(int(float(items[1])))
             runtimes.append(instRuntimes)
@@ -101,6 +96,7 @@ def getRuntimesFromFile(logger, dirName, filename, numRunsPerInstance, runtimeCu
 
 def prepareRuntimesTexTable(st, ed, sizes, numInsts, means, q10s, q25s, medians, q75s, q90s):
     #print(str(st) + ' - ' + str(ed))
+    #print(means)
     res = ""
     res += "\\begin{tabular}{c|" + "c"*len(sizes[st:ed]) + "} \n"
     res += "\\hline \n"
@@ -118,28 +114,39 @@ def prepareRuntimesTexTable(st, ed, sizes, numInsts, means, q10s, q25s, medians,
     res += "\\medskip{} \n"
     return res
 
-def prepareRuntimesTexTables(sizesTrain, runtimesTrain, sizesTest, runtimesTest, sizeThreshold, windowSize, dirName, supportTexFileName="table_Details-dataset-support.tex", challengeTexFileName="table_Details-dataset-challenge.tex"):
+def prepareRuntimesTexTables(logger, sizesTrain, runtimesTrain, sizesTest, runtimesTest, sizeThreshold, windowSize, dirName, specificObsvs, obsvs, supportTexFileName="table_Details-dataset-support.tex", challengeTexFileName="table_Details-dataset-challenge.tex"):
     dataTrain = {}
     dataTest = {}
     data = {}
 
-    start = int(max(calStatistic(sizesTrain,'q10')/1.1,min(sizesTrain)))
-    stop = int(min(calStatistic(sizesTest,'q90')*1.1,max(sizesTest)))
-    obsvs = np.array(range(start,stop,(stop-start)/10))
+    allSizes = list(cp.copy(sizesTrain))
+    allSizes.extend(list(cp.copy(sizesTest)))
+    start = int(max(calStatistic(allSizes,'q10')/1.1,min(allSizes)))
+    stop = int(min(calStatistic(allSizes,'q90')*1.1,max(allSizes)))
+    if(not specificObsvs):
+        obsvs = np.array(range(start,stop,(stop-start)/10))
 
     #print(min(sizesTest))
     #print(str(start) + ' - ' + str(stop))
 
     obsvsTrain = obsvs[np.where(obsvs <= sizeThreshold)]
     obsvsTest = obsvs[np.where(obsvs > sizeThreshold)] 
+ 
+    windowSize = calWindowSize(logger, sizesTrain,obsvsTrain,sizesTest,obsvsTest,windowSize)
+
 
     #print(len(obsvs))
     #print(len(obsvsTrain))
     #print(len(obsvsTest))
+    #print(sizeThreshold)
 
     for stat in ['mean','q0.10','q0.25','q0.50','q0.75','q0.90']:
-        statyTrain, statwTrain = calObsvStats(runtimesTrain,sizesTrain,stat,windowSize,obsvsTrain)
-        statyTest, statwTest = calObsvStats(runtimesTest,sizesTest,stat,windowSize,obsvsTest)
+        statxTrain, statyTrain, statwTrain = calObsvStats(runtimesTrain,sizesTrain,stat,windowSize,obsvsTrain)
+        statxTest, statyTest, statwTest = calObsvStats(runtimesTest,sizesTest,stat,windowSize,obsvsTest)
+        #print('-'*10)
+        #print(len(statyTrain))
+        #print(len(statyTest))
+        #print(len(obsvsTest))
         data[stat] = statyTrain
         data[stat].extend(statyTest)
 
@@ -152,6 +159,11 @@ def prepareRuntimesTexTables(sizesTrain, runtimesTrain, sizesTest, runtimesTest,
     statw = statwTrain
     statw.extend(statwTest)
 
+    #print(statyTrain)
+    #print(statyTest)
+    #print(obsvsTrain)
+    #print(obsvsTest)
+    #print(obsvs)
     #print(len(statw))
     
     csvHelper.genCSV(".", "table_Details-dataset.csv", list(obsvs), ["# instances", "mean", "Q(0.1)", "Q(0.25)", "median", "Q(0.75)", "Q(0.9)"], [statw, data['mean'], data['q0.10'], data['q0.25'], data['q0.50'], data['q0.75'], data['q0.90']])
@@ -171,7 +183,7 @@ def prepareRuntimesTexTables(sizesTrain, runtimesTrain, sizesTest, runtimesTest,
             print >>texFile, prepareRuntimesTexTable(threshold+i*numCols, min(threshold+(i+1)*numCols, len(obsvs)), obsvs, statw, data['mean'], data['q0.10'], data['q0.25'], data['q0.50'], data['q0.75'], data['q0.90'])
 
     
-def summarizeRuntimes(sizes, runtimes, numInsts, algName, dirName, statistic, perInstanceStatistic, threshold, numObsv, window):
+def summarizeRuntimes(logger, sizes, runtimes, numInsts, algName, dirName, statistic, perInstanceStatistic, threshold, numObsv, obsvs, window):
     #Author: YP
     #Created: 2018-12-17
     #Last updated: 2019-01-02 
@@ -189,10 +201,16 @@ def summarizeRuntimes(sizes, runtimes, numInsts, algName, dirName, statistic, pe
     #the max and min outside of the actual range of the data, we take the max/min
     start = int(max(calStatistic(sizes,'q10')/1.1,min(sizes)))
     stop = int(min(calStatistic(sizes,'q90')*1.1,max(sizes)))
-    obsvs = np.array(range(start,stop,(stop-start)/numObsv))
+    if(obsvs is None):
+        specificObsvs = False
+        obsvs = np.array(range(start,stop,(stop-start)/numObsv))
+    else:
+        specificObsvs = True
+        obsvs = np.array(obsvs)
     windowSize = float(stop-start)*window/(len(sizes)*0.8)
   
-    #print('Window Size: ' + str(windowSize))
+    #print('Window Size: ' + sr(windowSize))
+    #print(obsvs)
 
     runtimeStatsTrain = runtimeStatistics[np.where(sizes <= sizeThreshold)]
     runtimesTrain = runtimes[np.where(sizes <= sizeThreshold)]
@@ -203,20 +221,68 @@ def summarizeRuntimes(sizes, runtimes, numInsts, algName, dirName, statistic, pe
     sizesTest = sizes[np.where(sizes > sizeThreshold)]
     statxTest = obsvs[np.where(obsvs > sizeThreshold)]
 
+    windowSize = calWindowSize(logger,sizesTrain,statxTrain,sizesTest,statxTest,windowSize)
+
     #print(runtimesTrain)
+    #print("Before")
+    #print(statxTest)
+    statxTrain, statyTrain, statwTrain = calObsvStats(runtimeStatsTrain,sizesTrain,statistic,windowSize,statxTrain)
+    statxTest, statyTest, statwTest = calObsvStats(runtimeStatsTest,sizesTest,statistic,windowSize,statxTest)
 
-    statyTrain, statwTrain = calObsvStats(runtimeStatsTrain,sizesTrain,statistic,windowSize,statxTrain)
-    statyTest, statwTest = calObsvStats(runtimeStatsTest,sizesTest,statistic,windowSize,statxTest)
+    statxTrain = np.array(statxTrain)
+    statxTest = np.array(statxTest)
+    print("After")
+    print(statyTest)
 
-    prepareRuntimesTexTables(sizesTrain, runtimeStatsTrain, sizesTest, runtimeStatsTest, sizeThreshold, windowSize, dirName )
+    prepareRuntimesTexTables(logger, sizesTrain, runtimeStatsTrain, sizesTest, runtimeStatsTest, sizeThreshold, windowSize, dirName, specificObsvs, obsvs)
    
     return sizesTrain, runtimesTrain, runtimeStatsTrain, sizesTest, runtimesTest, runtimeStatsTest, sizeThreshold, windowSize, statxTrain, statyTrain, statxTest, statyTest
 
 
-def calObsvStats(runtimes,sizes,statistic,windowSize,obsvs,minInstances=11,delta=1e-4):
+def calWindowSize(logger,sizesTrain,statxTrain,sizesTest,statxTest,windowSize,minInstances=11):
+    #Author; YP
+    #Created: 2018-01-21
+    #Dynamically chooses the window size to ensure that there are always at least 
+    #minInstances instances in each weighted window.
+
+    sizes = [sizesTrain,sizesTest]
+    statxs = [statxTrain, statxTest]
+
+    for ind in [0,1]:
+        #print('-'*10)
+        for cWin in statxs[ind]:
+            #If there aren't enough instances in a window, we make it larger.
+            weights = [0]
+            while(sum(weights) <= minInstances):
+                #Get the indices of the data included in this window:
+                windex = np.where(np.logical_and(cWin - windowSize/2 <= sizes[ind], sizes[ind] < cWin + windowSize/2))[0] # ;)
+
+                #The middle of the curve is the midle of the window
+                mu = cWin
+
+                #capture two standard deviations within the window, everything else is truncated.
+                #(Two standard deviations captures 95% of the probability mass)
+                sigma = windowSize/4.0
+                #sizes[windex[0]] = mu
+
+                #Define the weights using a normal curve
+                #weights = (1/(2*math.pi*sigma**2)**0.5)*np.exp(-((sizes[windex]-mu)**2)/(2*sigma**2))
+                #Don't normalize the probability distribution, we want instances exactly at the peak of the
+                #distribution to have weight 1.
+                weights = np.exp(-((sizes[ind][windex]-mu)**2)/(2*sigma**2))
+                #print(sum(weights))
+                if(sum(weights) <= minInstances):
+                    logger.debug("Increasing size...")
+                    windowSize*=1.1
+
+
+    return windowSize
+
+
+def calObsvStats(runtimes,sizes,statistic,windowSize,obsvs,minInstances=1,delta=1e-4):
     #Author: YP
     #Created: 2018-12-17
-    #Last udpated: 2019-01-02
+    #Last udpated: 2019-01-21
     #Here the window size is defined by the instance size
     #But instead of ignoring the instance sie in the calculation
     #(and hence fitting the best constant function to the data)
@@ -246,10 +312,9 @@ def calObsvStats(runtimes,sizes,statistic,windowSize,obsvs,minInstances=11,delta
         #Get the indices of the data included in this window:
         windex = np.where(np.logical_and(cWin - windowSize/2 <= sizes, sizes < cWin + windowSize/2))[0] # ;)
 
-        #print(str(len(list(windex))) + ' instances in the window.')
-
         #The middle of the curve is the midle of the window
         mu = cWin
+
         #capture two standard deviations within the window, everything else is truncated.
         #(Two standard deviations captures 95% of the probability mass)
         sigma = windowSize/4.0
@@ -260,6 +325,8 @@ def calObsvStats(runtimes,sizes,statistic,windowSize,obsvs,minInstances=11,delta
         #Don't normalize the probability distribution, we want instances exactly at the peak of the
         #distribution to have weight 1.
         weights = np.exp(-((sizes[windex]-mu)**2)/(2*sigma**2))
+        #print(sum(weights))
+        #windowSize*=2
 
         #We only include windows which contain at least minInstances points.
         #print(sum(weights))
@@ -327,7 +394,7 @@ def calObsvStats(runtimes,sizes,statistic,windowSize,obsvs,minInstances=11,delta
             statw.append(sum(weights))
             #print('window location: ' + str(statx[-1]) + ', observed statistic: '+ str(staty[-1]))i
 
-    return staty, statw
+    return statx, staty, statw
 
 
 def linearModel(a,x):

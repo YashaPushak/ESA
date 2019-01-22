@@ -41,12 +41,12 @@ def calObsIntervals(logger,bruntimes,bsizes,statistic,numBootstrap,windowSize,st
     for i in range(0,numBootstrap):
         runtimes = bruntimes[i,:]
         sizes = bsizes[i,:]
-        staty, statw = summarizeRuntimes.calObsvStats(runtimes,sizes,statistic,windowSize,statxObsvs)
-        statsX.append(statxObsvs)
+        statx, staty, statw = summarizeRuntimes.calObsvStats(runtimes,sizes,statistic,windowSize,statxObsvs)
+        statsX.append(statx)
         statsY.append(staty)
         statsW.append(statw)
         if(i%10 == 9):
-            logger.debug('Statistics fitted to ' + str(i+1) + ' bootstrap samples...')
+            logger.info('Statistics fitted to ' + str(i+1) + ' bootstrap samples...')
 
     statBounds = []
     statMedians = []
@@ -82,7 +82,7 @@ def calObsIntervals(logger,bruntimes,bsizes,statistic,numBootstrap,windowSize,st
         percentDone = float(completed)/len(statxObsvs)
         printedIndex = min(int(percentDone*10),len(printed)-1)
         if(not printed[printedIndex]):
-            print("Intervals calculated for " + str(int(percentDone*100)) + "% of instance sizes...")
+            logger.info("Intervals calculated for " + str(int(percentDone*100)) + "% of instance sizes...")
             printed[printedIndex] = True
 
 
@@ -751,6 +751,8 @@ def getResidueBounds(logger, bstaty, bpreds, alpha):
     #print(bstaty)
 
     for i in range(0,len(bpreds)):
+        #print(np.shape(bstaty))
+        #print(np.shape(bpreds[i]))
         residues.append(bstaty - np.transpose(bpreds[i]))
        
     iresidues = []
