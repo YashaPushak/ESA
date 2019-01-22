@@ -231,8 +231,8 @@ def summarizeRuntimes(logger, sizes, runtimes, numInsts, algName, dirName, stati
 
     statxTrain = np.array(statxTrain)
     statxTest = np.array(statxTest)
-    print("After")
-    print(statyTest)
+    #print("After")
+    #print(statyTest)
 
     prepareRuntimesTexTables(logger, sizesTrain, runtimeStatsTrain, sizesTest, runtimeStatsTest, sizeThreshold, windowSize, dirName, specificObsvs, obsvs)
    
