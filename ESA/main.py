@@ -9,6 +9,8 @@ import gnuplotHelper
 import latexHelper
 import logging
 import sys
+import time
+import datetime
 
 #def inputDefToPythonDef( md ):
 #    idx = md.find( 'p', 0 )
@@ -373,6 +375,8 @@ def calWithinIntervals(data,los,ups,threshold,largerHalfIdx,k):
 
 
 def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the problem instances", modelFileName="models.txt", threshold=0, alpha=95, numBootstrapSamples=100, statistic="median", toModifyModelDefaultParas=False, tableDetailsSupportFileName="table_Details-dataset-support", tableDetailsChallengeFileName="table_Details-dataset-challenge", tableFittedModelsFileName="table_Fitted-models", tableBootstrapIntervalsParaFileName="table_Bootstrap-intervals-of-parameters", tableBootstrapIntervalsSupportFileName="table_Bootstrap-intervals_support", tableBootstrapIntervalsChallengeFileName="table_Bootstrap-intervals_challenge", figureCdfsFileName="cdfs", figureFittedModelsFileName="fittedModels", figureFittedResiduesFileName="fittedResidues", latexTemplate = "template-AutoScaling.tex", modelPlotTemplate = "template-plotModels.plt", residuePlotTemplate = "template-plotResidues.plt", gnuplotPath = 'auto', numRunsPerInstance = 0, perInstanceStatistic="median", numPerInstanceBootstrapSamples=10,logLevel = "INFO", logFile='stdout', stretchSize=[]):
+    startTime = time.time()
+
     #   get parameter values
     if os.path.exists( fileDir+"/configurations.txt" ):
         with open( fileDir+"/configurations.txt", "r") as configFile:
@@ -523,7 +527,7 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
  
 
     #   fit models
-    logger.debug('Fitting models to the observed point estimates.')
+    logger.debug('Fitting models to the observed support data.')
     fittedModels, lossesTrain = modelFittingHelper.fitModels(logger, modelNames, statxTrain, statyTrain, sizesTrain, flattenedRuntimesTrain, statistic)
 
     lossesTest = modelFittingHelper.getLosses(logger, fittedModels, modelNames, sizesTest, flattenedRuntimesTest, statistic)
@@ -642,6 +646,13 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     #YP: Added a check for the pdf file and error message
     if(not os.path.isfile('scaling_' + latexHelper.removeSubstrs(algName, '/') + '.pdf')):
         logger.error('scaling_' + latexHelper.removeSubstrs(algName, '/') + '.pdf was not successfully created. This may be due to a tex complication error. If you are not sure why, please try compiling scaling_' + latexHelper.removeSubstrs(algName, '/') + '.tex manually to check for errors.')
+
+    with open('time.log','a') as f_out:
+        f_out.write('-'*60 + '\n')
+        f_out.write('Run at: ' + str(datetime.datetime.now()) + '\n')
+        f_out.write('Took a total of: ' + str(time.time()-startTime) + '\n')
+        f_out.write('Outer Samples: ' + str(numBootstrapSamples) + '\n')
+        f_out.write('Inner Samples: ' + str(numPerInstanceBootstrapSamples) + '\n')
 
     #   wrap up
     os.chdir( cwd )
