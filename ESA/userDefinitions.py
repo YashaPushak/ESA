@@ -111,7 +111,7 @@ def fitModelLS(x,y,modelName,weights=None,a0=None):
         else:
             W = np.diag(np.ones(len(y)))
 
-        X = np.transpose([x,np.lones(len(x))])
+        X = np.transpose([x,np.ones(len(x))])
         y = np.transpose(y)
         AAinv = np.linalg.pinv(np.linalg.multi_dot([np.transpose(X),W,X]))
         w = np.linalg.multi_dot([AAinv,np.transpose(X),W,y])

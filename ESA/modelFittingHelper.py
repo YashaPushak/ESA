@@ -47,8 +47,8 @@ def getResidues(logger, statx, staty, fittedModels, modelNames):
 
     residues = []
 
-    for i in range(0,len(modelNames)):
-        residues.append(staty - ud.evalModel(statx,fittedModels[i],modelNames[i]))
+    for i in range(0,len(modelNames)): #TODO: Yasha you switched around the order here because it was inconsistent elsewhere. You need to double check everywhere to make sure you have it correct.
+        residues.append(ud.evalModel(statx,fittedModels[i],modelNames[i])-staty)
 
     return residues
 
