@@ -342,7 +342,7 @@ def calObsvStats(runtimes,sizes,statistic,windowSize,obsvs,minInstances=1,delta=
             a = np.linalg.multi_dot([AAinv,np.transpose(X),W,y])
 
             #Calculate the weighted L1Loss
-            oldLoss = sum(abs(modelFittingHelper.adjustResiduals(linearModel(a,sampleSizes) - sampleTimes, statistic))*weights)
+            oldLoss = sum(abs(modelFittingHelper.adjustResiduals(sampleTimes - linearModel(a,sampleSizes), statistic))*weights)
 
             if(statistic == 'mean'):
                 #If we are fitting the mean, then we are already done.
@@ -356,7 +356,7 @@ def calObsvStats(runtimes,sizes,statistic,windowSize,obsvs,minInstances=1,delta=
 
             for i in range(0,maxIters):
 
-                residuals = abs(modelFittingHelper.adjustResiduals(linearModel(a,sampleSizes) - sampleTimes,'q' + str(1-float(statistic[1:]))))
+                residuals = abs(modelFittingHelper.adjustResiduals(sampleTimes - linearModel(a,sampleSizes),'q' + str(1-float(statistic[1:]))))
                 #print(residuals)
                 #min residual size to avoid numerical instability
                 residuals[np.where(residuals < delta)] = delta
@@ -375,7 +375,7 @@ def calObsvStats(runtimes,sizes,statistic,windowSize,obsvs,minInstances=1,delta=
                 a = np.linalg.multi_dot([AAinv,np.transpose(X),W,y])
 
                 #Calculate the weighted L1Loss
-                newLoss = sum(abs(modelFittingHelper.adjustResiduals(linearModel(a,sampleSizes) - sampleTimes, statistic))*weights)
+                newLoss = sum(abs(modelFittingHelper.adjustResiduals(sampleTimes - linearModel(a,sampleSizes), statistic))*weights)
 
                 if(oldLoss-newLoss < delta):
                     if(oldLoss < newLoss):

@@ -58,7 +58,7 @@ def genGnuplotScripts(logger, algName, modelNames, fittedModels, statistic, size
     intervalTemplate = "'@@file@@' using 1:@@low@@:@@up@@ with filledcurves lc @@color@@ notitle,  \\"
     intervalKey = "'' using (0):(0):(0) with filledcurves lc 'grey' title '" + str(alpha) + "% Confidence Interval'"
     modelTemplate = "@@printedModel@@ lc @@color@@ title '@@model@@ Model', \\"
-    residueTemplate = "'@@file@@' using 1:@@ind@@ lc @@color@@ smooth unique title '@@model@@ Model', \\"
+    residueTemplate = "'@@file@@' using 1:@@ind@@ lc @@color@@ smooth unique title '@@model@@', \\"
 
     colors = ['"green"','"magenta"','"cyan"', '"blue"', '"black"','"brown"','"yellow"','"red"']
 
@@ -94,7 +94,10 @@ def genGnuplotScripts(logger, algName, modelNames, fittedModels, statistic, size
                         text = copy.copy(temp)
 
                         subsCopy = copy.copy(subs)
-                        subsCopy['model'] = models[i].capitalize()
+                        if(models[i].lower() == 'obsv'):
+                            subsCopy['model'] = 'Observed ' + statistic.capitalize() 
+                        else:
+                            subsCopy['model'] = models[i].capitalize() + ' Model'
                         subsCopy['color'] = colors[i]
                         subsCopy['low'] = str((i+1)*2+1)
                         subsCopy['up'] = str((i+1)*2+2)

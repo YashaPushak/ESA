@@ -127,7 +127,7 @@ def getResiduals(x,y,a,modelName):
     #Created: 2019-01-03
     #Evaluates the model named modelName with parameters
     #a on the numpy array of instance sizes x and returns
-    #the residuals in the form prediction - observation.
+    #the residuals in the form observation - prediction.
     #NOTE: You are allowed to approximate the least 
     #squares regression problem with an easier one (for
     #example by taking the log of the running times and
@@ -140,19 +140,19 @@ def getResiduals(x,y,a,modelName):
     #flipped, e.g., the 95th quantile will become the 5th.
 
     if(modelName.lower() in ['poly','poly.','polynomial']):
-        return np.log(poly(a,x)) - np.log(y)
+        return np.log(y) - np.log(poly(a,x))
     elif(modelName.lower() in ['exp','exp.','exponential']):
-        return np.log(exp(a,x)) - np.log(y)
+        return np.log(y) - np.log(exp(a,x))
     elif(modelName.lower() in ['lin','lin.','linear']):
         #NOTE: This is the only example we have where we are
         #not modifying the objective function to simplify the
         #regression problem, so we do not modify the residuals
         #here. 
-        return linear(a,x) - y 
+        return y - linear(a,x)
     elif(modelName.lower() in ['sqrtexp','sqrtexp.','sqrt-exp','rootexp','rootexp.','root-exp','square-root exponential','root exponential']):
-        return np.log(sqrtexp(a,x)) - np.log(y)
+        return np.log(y) - np.log(sqrtexp(a,x))
     elif(modelName.lower() in ['polylog']):
-        return np.log(polylog(a,x)) - np.log(y)
+        return np.log(y) - np.log(polylog(a,x))
 
 
 

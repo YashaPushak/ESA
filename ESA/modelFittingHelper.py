@@ -17,7 +17,7 @@ def adjustResiduals(r,statistic):
             if('q' == statistic[0].lower()):
                 statistic = statistic[1:]
             quantile = float(statistic)
-        return np.where(r<0,r*(quantile)*2,r*(1-quantile)*2)
+        return np.where(r<0,r*(1-quantile),r*(quantile))
   
 
 def getLoss(residuals,statistic):
@@ -32,7 +32,7 @@ def getLosses(logger, fittedModels, modelNames, sizes, runtimes, statistic):
     losses = []
 
     for i in range(0,len(modelNames)):
-        losses.append(getLoss(ud.evalModel(sizes,fittedModels[i],modelNames[i])-runtimes,statistic))
+        losses.append(getLoss(runtimes-ud.evalModel(sizes,fittedModels[i],modelNames[i]), statistic))
 
     return losses
 
@@ -48,7 +48,7 @@ def getResidues(logger, statx, staty, fittedModels, modelNames):
     residues = []
 
     for i in range(0,len(modelNames)): #TODO: Yasha you switched around the order here because it was inconsistent elsewhere. You need to double check everywhere to make sure you have it correct.
-        residues.append(ud.evalModel(statx,fittedModels[i],modelNames[i])-staty)
+        residues.append(staty - ud.evalModel(statx,fittedModels[i],modelNames[i]))
 
     return residues
 
@@ -68,7 +68,7 @@ def fitModelIRLS(logger, modelName, statx, staty, sizes, runtimes, statistic, de
     runtimes = np.array(runtimes)
 
     a = ud.fitModelLS(statx,staty,modelName)
-    newLoss = getLoss(ud.evalModel(sizes,a,modelName)-runtimes,statistic)
+    newLoss = getLoss(runtimes - ud.evalModel(sizes,a,modelName),statistic)
     oldLoss = newLoss
 
     #Use up to 100 iterations of the generalized iteratively reweighted linear least squares
@@ -102,7 +102,7 @@ def fitModelIRLS(logger, modelName, statx, staty, sizes, runtimes, statistic, de
         
         oldA = a
         a = ud.fitModelLS(sizes,runtimes,modelName,W,oldA)
-        newLoss = getLoss(ud.evalModel(sizes,a,modelName) - runtimes,statistic)
+        newLoss = getLoss(runtimes-ud.evalModel(sizes,a,modelName),statistic)
 
         if(oldLoss-newLoss < delta):
             if(oldLoss < newLoss):
@@ -139,71 +139,5 @@ def fitModels(logger, modelNames, statx, staty, sizes, runtimes, statistic):
     return fittedModels, losses
 
 
-
-
-def unused():
-    para = []
-    for k in range(0, len(modelNames)):
-        para.append( [] )
-    try:
-        with open("fit-models.log", "r") as fitsFile:
-            for line in fitsFile:
-                terms = line.split(":")
-                k = modelNames.index(terms[0].split()[0].strip())
-                if terms[0].split()[1].strip() == "fit":
-                    values = terms[1].split()
-                    para[k] = [ float(v) for v in values ]
-    except Exception:
-        logger.error("Model fitting failed! Please check to make sure gnuplot is installed correctly, or try specifying the directory containing gnuplot configurations.txt using the gnuplotPath variable. (see fit.log for more details about the error message.)")
-        system.exit(-1)
-
-    #YP: fixed check to ensure that all of the models were fit correctly and updated the error
-    #message to include information about which model failed to fit and how to fix it.
-    for k in range(0, len(modelNames)):
-        if len(para[k]) == 0:
-            logger.error("Model fitting failed for the " + modelNames[k] + " model!")
-            logger.error("This is often due to poor default fitting parameters; however, you can find more information in 'fit.log'.")
-            logger.error("Please try updating the initial values for the " + modelNames[k] + " model parameters in " + modelFileName + ".")
-            logger.error("Ideally these values should be within one order of magnitude of their fitted values.")
-            sys.exit(-1)
-    seTrains = []
-    seTests = []
-    for k in range(0, len(modelNames)):
-        seTrains.append( 0.0 )
-        seTests.append( [0.0, 0.0] )
-        for i in range(0, threshold):
-            seTrains[k] += (modelFuncs[k](para[k], sizes[i]) - medians[i])**2 
-        for i in range(threshold, len(sizes)):
-            predValue = modelFuncs[k](para[k], sizes[i])
-            if medianIntervals[i][0] > predValue or predValue > medianIntervals[i][1]:
-                seTests[k][0] += min( (medianIntervals[i][0]-predValue)**2, (medianIntervals[i][1]-predValue)**2 )
-            seTests[k][1] += max( (medianIntervals[i][0]-predValue)**2, (medianIntervals[i][1]-predValue)**2 )
-
-    with open("./residueTrainFile.txt", 'w') as gnuplotFile:
-        for i in range(0, threshold):
-            gnuplotFileLine = "%d" % sizes[i]
-            for k in range(0, len(modelNames)):
-                gnuplotFileLine += " %f" % (medians[i] - modelFuncs[k](para[k], sizes[i]))
-            print >>gnuplotFile, gnuplotFileLine
-    with open("./residueTestFile.txt", 'w') as gnuplotFile:
-        for i in range(threshold, len(sizes)):
-            gnuplotFileLine = "%d" % sizes[i]
-            for k in range(0, len(modelNames)):
-                gnuplotFileLine += " %f" % (medians[i] - modelFuncs[k](para[k], sizes[i]))
-            print >>gnuplotFile, gnuplotFileLine
-    os.system( 'cat residueTrainFile.txt residueTestFile.txt >residueFile.txt' )
-
-    #Convert the squared errors to root mean squared errors.
-    for i in range(0,2):
-        seTrains[k] = math.sqrt( seTrains[k]/threshold )
-        for k in range(0,len(modelNames)):
-            seTests[k][i] = math.sqrt( seTests[k][i]/(len(sizes)-threshold))
-
-    #YP: The original function did not return these values, but instead
-    #calculated the table_Fitted-models.* files and the residue* files
-    #here. I am returning this instead, and creating this files in new
-    #functions so that I can replace some of the data with statistics
-    #from the bootstrap models.
-    return (para, seTrains, seTests)
 
 
