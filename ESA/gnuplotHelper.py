@@ -37,7 +37,7 @@ def getModelOrder(fittedModels, modelNames, size):
     return order
 
 
-def genGnuplotScripts(logger, algName, modelNames, fittedModels, statistic, sizes, sizeThreshold, flattenedRuntimesTrain, flattenedRuntimesTest, modelGnuplotDefs, alpha):
+def genGnuplotScripts(logger, algName, modelNames, fittedModels, statistic, sizes, sizeThreshold, flattenedRuntimesTrain, flattenedRuntimesTest, modelGnuplotDefs, cutoff, alpha):
     flattenedRuntimesTrain = np.array(flattenedRuntimesTrain)
     flattenedRuntimesTest = np.array(flattenedRuntimesTest)
 
@@ -60,11 +60,14 @@ def genGnuplotScripts(logger, algName, modelNames, fittedModels, statistic, size
     modelTemplate = "@@printedModel@@ lc @@color@@ title '@@model@@ Model', \\"
     residueTemplate = "'@@file@@' using 1:@@ind@@ lc @@color@@ smooth unique title '@@model@@', \\"
 
-    colors = ['"green"','"magenta"','"cyan"', '"blue"', '"black"','"brown"','"yellow"','"red"']
+    colors = ['"blue"','"magenta"','"cyan"', '"orange"', '"purple"', '"yellow"','"red"','"green"','"black"','"brown"',]
 
-    plotModelText = '''plot 'gnuplotTrainFile.txt' using 1:2 pt 1 lc "purple" ps 1 title 'Support Data', \\
-'gnuplotTestFile.txt' using 1:2 pt 1 lc "orange" ps 1 title 'Challenge Data', \\
+    plotModelText = '''plot 'gnuplotTrainFile.txt' using 1:2 pt 1 lc "dark-grey" ps 1 title 'Support Data', \\
+'gnuplotTestFile.txt' using 1:2 pt 1 lc "light-grey" ps 1 title 'Challenge Data', \\
 '''
+
+    if(subs['maxTime'] >= cutoff):
+        plotModelText += "x*0 + " + str(cutoff) + " lw 2 dt 2 lc 'black' title 'Running Time Cutoff', \\\n"
 
     plotResidueText = '''plot '''
 
