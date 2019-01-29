@@ -26,6 +26,8 @@ def evalModel(x,a,modelName):
         return sqrtexp(a,x)
     elif(modelName.lower() in ['polylog']):
         return polylog(a,x)
+    elif(modelName.lower() in ['linlog']):
+        return linlog(a,x)
 
 
 def fitModelLS(x,y,modelName,weights=None,a0=None):
@@ -118,6 +120,19 @@ def fitModelLS(x,y,modelName,weights=None,a0=None):
         a = w[0]
         b = w[1]
         a = [a,b]
+    elif(modelName.lower() in ['linlog']):
+        if(weights is not None):
+            W = np.diag(weights)
+        else:
+            W = np.diag(np.ones(len(y)))
+        X = np.transpose([x*np.log(x),np.ones(len(x))])
+        y = np.transpose(y)
+        AAinv = np.linalg.pinv(np.linalg.multi_dot([np.transpose(X),W,X]))
+        w = np.linalg.multi_dot([AAinv,np.transpose(X),W,y])
+        a = w[0]
+        b = w[1]
+        a = [a,b]     
+
 
     return a
 
@@ -144,15 +159,18 @@ def getResiduals(x,y,a,modelName):
     elif(modelName.lower() in ['exp','exp.','exponential']):
         return np.log(y) - np.log(exp(a,x))
     elif(modelName.lower() in ['lin','lin.','linear']):
-        #NOTE: This is the only example we have where we are
-        #not modifying the objective function to simplify the
-        #regression problem, so we do not modify the residuals
-        #here. 
+        #NOTE: This is and linlog below the only twp examples 
+        #we have where we are not modifying the objective
+        #function to simplify the regression problem, so we do 
+        #not modify the residuals here. 
         return y - linear(a,x)
     elif(modelName.lower() in ['sqrtexp','sqrtexp.','sqrt-exp','rootexp','rootexp.','root-exp','square-root exponential','root exponential']):
         return np.log(y) - np.log(sqrtexp(a,x))
     elif(modelName.lower() in ['polylog']):
         return np.log(y) - np.log(polylog(a,x))
+    elif(modelName.lower() in ['linlog']):
+        return y - linlog(a,x)
+
 
 
 
@@ -173,4 +191,5 @@ def sqrtexp(a,x):
 def polylog(a,x):
     return a[0]*(x**a[1])*np.log(x)
 
-
+def linlog(a,x):
+    return a[0]*x*np.log(x) + a[1]

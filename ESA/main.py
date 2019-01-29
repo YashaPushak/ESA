@@ -55,29 +55,21 @@ def getModels(logger, fileDir, fileName):
     modelNames = []
     modelNumParas = []
     modelReps = []
-    modelDefs = []
+
     modelGnuplotDefs = []
-    modelFuncs = []
     with open(fileDir+"/"+fileName, "r") as modelFile:
         for line in modelFile:
             if('#' in line[0]):
                 continue
             terms = line.split(",")
-            if len(terms)>4:
+            if len(terms)>=4:
                 modelNames.append( terms[0].strip() )
                 logging.debug('Parsing ' + modelNames[-1] + ' model.')
                 modelNumParas.append( int(terms[1]) )
                 modelReps.append( terms[2].strip() )
-                modelDefs.append( inputModelToInternal( terms[3].strip(), True ) )
-                modelGnuplotDefs.append( inputModelToInternal( terms[4].strip(), False ) )
+                modelGnuplotDefs.append( inputModelToInternal( terms[3].strip(), False ) )
 
-    for md in modelDefs:
-        def func(p, x, modelDef=md):
-            # print modelDef
-            return eval( modelDef )
-        modelFuncs.append( func )
-
-    return modelNames, modelNumParas, modelReps, modelDefs, modelGnuplotDefs, modelFuncs
+    return modelNames, modelNumParas, modelReps, modelGnuplotDefs
 
 
 def getIntervals(los, ups):
@@ -504,7 +496,7 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
 
     #   read in model names and definitions
     logger.debug('Reading in model names and definitions.')
-    modelNames, modelNumParas, modelOriReps, modelDefs, modelGnuplotDefs, modelFuncs = getModels(logger, '.', modelFileName)
+    modelNames, modelNumParas, modelOriReps, modelGnuplotDefs = getModels(logger, '.', modelFileName)
     modelReps = replaceRepsForOutput( modelOriReps )
  
 
@@ -531,9 +523,6 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     fittedModels, lossesTrain = modelFittingHelper.fitModels(logger, modelNames, statxTrain, statyTrain, sizesTrain, flattenedRuntimesTrain, statistic)
 
     lossesTest = modelFittingHelper.getLosses(logger, fittedModels, modelNames, sizesTest, flattenedRuntimesTest, statistic)
-
-
-    #(para, rmseTrains, rmseTests) = modelFittingHelper.fitModels(logger, algName, modelNames, modelNumParas, modelReps, modelFuncs, sizes, stats, statIntervals, threshold, gnuplotPath, modelFileName)
 
 
     #YP: I added an extra 'stretch size' here for predictions beyond the
