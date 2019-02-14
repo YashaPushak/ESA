@@ -30,6 +30,8 @@ def evalModel(x,a,modelName):
         return linlog(a,x)
     elif(modelName.lower() in ['lin+log']):
         return linpluslog(a,x)
+    elif(modelName.lower() in ['linlog+lin']):
+        return linlogpluslin(a,x)
 
 
 def fitModelLS(x,y,modelName,weights=None,a0=None):
@@ -71,9 +73,9 @@ def fitModelLS(x,y,modelName,weights=None,a0=None):
         #be weighted equally, otherwise the optimization problem
         #becomes biased vertically, instead of just horizontally. 
         if(a0 is None):
-            W = np.diag(weights*y)
+            W = np.diag(weights*(np.array(y)))
         else:
-            W = np.diag(weights*evalModel(x,a0,modelName))
+            W = np.diag(weights*(np.array(evalModel(x,a0,modelName))))
 
         if(modelName.lower() in ['poly','poly.','polynomial']):        
             #Note that we have to modify x to obtain X differently
@@ -133,7 +135,19 @@ def fitModelLS(x,y,modelName,weights=None,a0=None):
         w = np.linalg.multi_dot([AAinv,np.transpose(X),W,y])
         a = w[0]
         b = w[1]
-        a = [a,b]     
+        a = [a,b] 
+    elif(modelName.lower() in ['linlog+lin']):
+        if(weights is not None):
+            W = np.diag(weights)
+        else:
+            W = np.diag(np.ones(len(y)))
+        X = np.transpose([x*np.log(x),x])
+        y = np.transpose(y)
+        AAinv = np.linalg.pinv(np.linalg.multi_dot([np.transpose(X),W,X]))
+        w = np.linalg.multi_dot([AAinv,np.transpose(X),W,y])
+        a = w[0]
+        b = w[1]
+        a = [a,b]         
     elif(modelName.lower() in ['lin+log']):
         if(weights is not None):
             W = np.diag(weights)
@@ -187,6 +201,8 @@ def getResiduals(x,y,a,modelName):
         return y - linlog(a,x)
     elif(modelName.lower() in ['lin+log']):
         return y - linpluslog(a,x)
+    elif(modelName.lower() in ['linlog+lin']):
+        return y - linlogpluslin(a,x)
 
 
 
@@ -212,3 +228,6 @@ def linlog(a,x):
 
 def linpluslog(a,x):
     return a[0]*x + a[1]*np.log(x)
+
+def linlogpluslin(a,x):
+    return a[0]*x*np.log(x) + a[1]*x

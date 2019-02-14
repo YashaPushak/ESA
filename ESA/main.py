@@ -494,8 +494,8 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     sizesTrain, runtimesTrain, flattenedRuntimesTrain, sizesTest, runtimesTest, flattenedRuntimesTest, sizeThreshold, windowSize, statxTrain, statyTrain, statxTest, statyTest = summarizeRuntimes.summarizeRuntimes(logger, sizes, runtimes, numInsts, algName, ".", statistic, perInstanceStatistic, threshold, numObsv, obsvs, window)
     # stats = [ summarizeRuntimes.calStatistic( runtimes[i], statistic ) for i in range(0, len(sizes)) ]
 
-    #fittedModels = [[1.7682845699154035e-09, 2.7887342133273023]]
-    #modelNames = ['poly']
+    #fittedModels = [[0.19899198603609397, 1.1304343525093121]]
+    #modelNames = ['sqrt-exp']
     #fittedModels = [[7.29720138243327e-05, 1.03188952955068]]
     #modelNames = ['exp']
     #lossesTrain = modelFittingHelper.getLosses(logger, fittedModels, modelNames, sizesTrain, flattenedRuntimesTrain, statistic)
