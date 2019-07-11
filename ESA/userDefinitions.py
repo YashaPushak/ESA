@@ -12,7 +12,7 @@ import numpy as np
 
 def evalModel(x,a,modelName):
     #Author: YP
-    #Created: 2019-01-03
+    #Created: 2019-02-15
     #Evaluates the model named modelName with parameters
     #a on the numpy array of instance sizes x.
 
@@ -32,11 +32,13 @@ def evalModel(x,a,modelName):
         return linpluslog(a,x)
     elif(modelName.lower() in ['linlog+lin']):
         return linlogpluslin(a,x)
+    elif(modelName.lower() in ['linlog2']):
+        return linlogsquared(a,x)
 
 
 def fitModelLS(x,y,modelName,weights=None,a0=None):
     #Author: YP
-    #Create: 2019-01-03
+    #Create: 2019-02-15
     #Fit the specified model to the numpy array data
     #x and y. If weights are specified, you must 
     #perform weight least squares regression.
@@ -160,6 +162,18 @@ def fitModelLS(x,y,modelName,weights=None,a0=None):
         a = w[0]
         b = w[1]
         a = [a,b]     
+    elif(modelName.lower() in ['linlog2']):
+        if(weights is not None):
+            W = np.diag(weights)
+        else:
+            W = np.diag(np.ones(len(y)))
+        X = np.transpose([x*(np.log(x)**2),np.ones(len(x))])
+        y = np.transpose(y)
+        AAinv = np.linalg.pinv(np.linalg.multi_dot([np.transpose(X),W,X]))
+        w = np.linalg.multi_dot([AAinv,np.transpose(X),W,y])
+        a = w[0]
+        b = w[1]
+        a = [a,b] 
     
 
 
@@ -168,7 +182,7 @@ def fitModelLS(x,y,modelName,weights=None,a0=None):
 
 def getResiduals(x,y,a,modelName):
     #Author: YP
-    #Created: 2019-01-03
+    #Created: 2019-02-15
     #Evaluates the model named modelName with parameters
     #a on the numpy array of instance sizes x and returns
     #the residuals in the form observation - prediction.
@@ -203,6 +217,8 @@ def getResiduals(x,y,a,modelName):
         return y - linpluslog(a,x)
     elif(modelName.lower() in ['linlog+lin']):
         return y - linlogpluslin(a,x)
+    elif(modelName.lower() in ['linlog2']):
+        return y - linlogsquared(a,x)
 
 
 
@@ -231,3 +247,6 @@ def linpluslog(a,x):
 
 def linlogpluslin(a,x):
     return a[0]*x*np.log(x) + a[1]*x
+
+def linlogsquared(a,x):
+    return a[0]*x*(np.log(x)**2) + a[1]
