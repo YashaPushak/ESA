@@ -1,8 +1,15 @@
-## Change Log
+# Change Log
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](http://keepachangelog.com/) 
+
+## [2.0] - 2020-07-03
+
+### Added
+ - ESA now uses a completely re-vamped underlying methodology. Conceptually it is very similar; however, it no longer requires instances grouped into bins of the sames size.
+
+### TODO
+ - Fix all of the documentation
 
 ## [1.1] - 2017-07-26
 
