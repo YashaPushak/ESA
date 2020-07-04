@@ -153,13 +153,13 @@ pre-supported scaling models scaling models, for which we provide both the
 To use any of these models, simple copy and paste the appropriate line(s) from
 below into your `model.txt` file:
 
-    Exp,2,@@a@@ \times @@b@@^{x}, @@a@@*@@b@@**x
-    RootExp,2,@@a@@ \times @@b@@^{\sqrt{x}},@@a@@*@@b@@**(x**(0.5))
-    Poly,2,@@a@@ \times x^{@@b@@},@@a@@*x**@@b@@
-    PolyLog,2,@@a@@ \times \log(x) \times x^{@@b@@}
-    LinLog2,2,@@a@@ \times \log^2(x) + @@b@@, @@a@@*log(x)**2 + @@b@@
-    LinLog+Lin,2,@@a@@ \times \log(x) + @@b@@ \times x, @@a@@*x*log(x) + @@b@@*log(x)
-    Lin,2@@a@@ \times x + @@b@@,@@a@@*x+@@b@@
+    Exp, 2, @@a@@ \times @@b@@^{x}, @@a@@*@@b@@**x
+    RootExp, 2, @@a@@ \times @@b@@^{\sqrt{x}}, @@a@@*@@b@@**(x**(0.5))
+    Poly, 2, @@a@@ \times x^{@@b@@}, @@a@@*x**@@b@@
+    PolyLog, 2, @@a@@ \times \log(x) \times x^{@@b@@}, @@a@@*log(x)*x**@@b@@
+    LinLog2, 2, @@a@@ \times \log^2(x) + @@b@@, @@a@@*log(x)**2 + @@b@@
+    LinLog+Lin, 2, @@a@@ \times \log(x) + @@b@@ \times x, @@a@@*x*log(x) + @@b@@*log(x)
+    Lin, 2, @@a@@ \times x + @@b@@, @@a@@*x+@@b@@
    
 Please see the inline comments in `ESA/userDefinitions.py` for instructions on
 how to add additional custom scaling moels.
