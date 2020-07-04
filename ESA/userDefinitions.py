@@ -34,6 +34,9 @@ def evalModel(x,a,modelName):
         return linlogpluslin(a,x)
     elif(modelName.lower() in ['linlog2']):
         return linlogsquared(a,x)
+    else:
+        raise ValueError('Unsupported scaling model name. Provided {}'
+                         ''.format(modelName))
 
 
 def fitModelLS(x,y,modelName,weights=None,a0=None):
