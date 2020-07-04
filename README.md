@@ -78,37 +78,45 @@ around 3.5 for extended periods of time).
 
 ## Installing ESA
 
-First, if you do not already have them, you will need to install gnuplot 
+First, download the latest version of ESA from 
+https://github.com/YashaPushak/ESA. 
+
+Next, if you do not already have them, you will need to install gnuplot 
 and python with the numpy package. ESA was designed and tested using python
 v2.7.13 and gnuplot v5.0 patchlevel 0. However, preliminary tests indicate 
-that ESA can run without modification using python v3.8.
+that ESA can run without modification using python v3.7.
 
-Next, download the latest version of ESA from https://github.com/YashaPushak/ESA.
+If you don't already have it, you can install numpy by running 
+`pip install -r requirements.txt` from inside ESA's root directory.
 
 ## Running ESA
 
-Once both are installed, and before you can use ESA on your own data, you 
+Before you can use ESA on your own data, you 
 will need to create a directory for the input and output files, as well as a 
 configuration file specifying the details ESA needs to run. The easiest way to 
 learn this is by example. Try testing ESA using the following command line 
 (which will also help you verify that everything was installed correctly):
 
-./runESA.sh example_scenarios/WalkSAT
+    ./runESA.sh examples/lingeling
 
-This command line directs ESA to be run using the scenario found in 
-example_scenarios/WalkSAT. In particular, it starts by reading the 
-configuration file found in example_scenarios/WalkSAT/configurations.txt.
+This should take about 20-30 seconds to run. ESA starts by reading the 
+configuration file `examples/lingeling/configurations.txt`, and then
+fits the specified models to the running time data.
 
 You can set different properties of the scenario in the configuration file, 
-such as 'fileName', which contains the target algorithm running times, or 
-'algName', which specifies the name ESA was will use to refer to the target 
-algorithm in the LaTeX report. 
+such as `fileName`, which contains the performance measurements for your
+algorithm or `algName`, which specifies the name ESA was will use to refer 
+to your algorithm in the automatically generated LaTeX report. 
 
 You can also specify different parameters used by ESA. For example, we 
-recommend to increase the number of bootstrap samples in in the example 
-scenario from 100 to 1000 when used in practice. For more information on what
- variables you can set in the confiugration file, please refer to 
-UserGuide.pdf
+recommend to increase the number of bootstrap samples in the example 
+scenario from 51 to 1001 when used in practice.
+
+You should see several output files created in the directory
+`examples/lingeling`, most notably including an automatically generated
+technical report in the form of a pdf. 
+
+## Instance File Format
 
 To create your own running time file, you will need to create a csv file with 
 one line per instance:
@@ -116,26 +124,38 @@ one line per instance:
    the instance name. (ESA will ignore this column, it is for your reference
    only);
  - the second column is the size of the instance (as an integer); 
- - the third column is the running time (in seconds);
+ - the third column is the running time, in seconds (of course, you can use
+   any performance metric and unit as desired -- however, the units and words
+   referring to the measurements will need to be manually modified in the LaTeX
+   template in order to produce correct output);
  - you may also append any number of additional columns with running times 
    obtained from independent runs of the target algorithm. 
  
-You can also specify your own custom models to the model.txt file for ESA to
-use. Each line in the file defines a model for ESA to fit to the running 
-time data:
+## Custom Scaling Models
+
+You can also specify your own custom models. To do so, you will need to do 
+two things: First, add four pieces of information about your model into a
+file called `model.txt`. Each line in the file defines a model for ESA to 
+fit to the running time data:
  - the first column is the model name; 
  - the second column is the number of parameters;
  - the third column is a snippet of LaTeX code to display the model;
- - the fourth column is the python expression for the model;
- - the fifth column is the gnuplot expression for the model; and 
- - the remaining columns are the default values for the model parameters 
-   (one per column).
-The model parameters must be of the form @@a@@, @@b@@, @@c@@, ... in the LaTeX, python and gnuplot expressions. 
+ - the fourth column is the gnuplot expression for the model; and 
 
-As an example, try adding the following line to the models.txt file in the example scenario:
+The model parameters must be of the form @@a@@, @@b@@, @@c@@, ... in the LaTeX
+and gnuplot expressions. 
 
-RootExp,2,@@a@@\times @@b@@^{\sqrt{x}},@@a@@*@@b@@**(x**(0.5)),@@a@@*@@b@@**(x**(0.5)),1e-6,1.8
+Second, you will need to implement a simple interface in the file 
+`ESA/userDefinitions.py` that provides ESA with a python definition for the
+model, as well as instructions on how to optimize it. ESA v2 comes with several
+pre-supported scaling models scaling models, for which we provide both the 
+`userDefinitions.py` implementations as well as example `model.txt` defintions.
+To use any of these models, simple copy and paste the appropriate line(s) from
+below into your `model.txt` file:
 
-Try running ESA again. You should find that the RootExp. model tends to over-estimate the running time data. 
-
-For more information about how to use more advanced features of ESA, please see the user guide. 
+    Exp,2,@@a@@\times @@b@@^{x}, @@a@@\*@@b@@\*\*x
+    Poly,2,@@a@@\times x^{@@b@@},@@a@@\*x\*\*@@b@@
+    RootExp,2,@@a@@\times @@b@@^{\sqrt{x}},@@a@@\*@@b@@\*\*(x\*\*(0.5))
+   
+Please see the inline comments in `ESA/userDefinitions.py` for instructions on
+how to add additional custom scaling moels.

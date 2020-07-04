@@ -1,0 +1,13 @@
+fileName : runtimes-lingeling-bmc-pdtv.csv
+algName : Lingeling
+instName : hwmcc08-pdtvisvsar29
+trainTestSplit : 0.3
+alpha : 95
+numBootstrapSamples : 51
+numPerInstanceBootstrapSamples : 21
+statistic : median
+perInstanceStatistic : median
+numObservations : 50
+window: 101
+runtimeCutoff: 3600
+logLevel : info

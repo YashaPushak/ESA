@@ -11,7 +11,7 @@ set grid xtics ytics mxtics mytics lc rgb '#999999' lw 1 lt 0
 set xtics (1,10,100,1000,10000,100000,1000000,10000000,100000000,1000000000)
 set xrange[@@minSize@@/1.1:@@maxSize@@*1.1]
 set yrange[@@minTime@@/10:@@maxTime@@*10]
-set key top right spacing 0.95
+set key bottom right spacing 0.95
 
 #set format x "%2.0tx10^{%L}"
 #set format y "%2.0tx10^{%L}"

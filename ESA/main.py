@@ -1,16 +1,19 @@
+import inspect
 import os
 import math
+import logging
+import sys
+import time
+import datetime
+
 import numpy as np
+
 import summarizeRuntimes
 import modelFittingHelper
 import bootstrapHelper
 import csvHelper
 import gnuplotHelper
 import latexHelper
-import logging
-import sys
-import time
-import datetime
 
 #def inputDefToPythonDef( md ):
 #    idx = md.find( 'p', 0 )
@@ -38,7 +41,7 @@ def inputModelToInternal( instr, inPython ):
         if edIdx<2:
             break
         elif edIdx!=stIdx+5:
-            print instr
+            print(instr)
             raise Exception
         id = instr[stIdx+2]
         if inPython:
@@ -288,14 +291,6 @@ def evaluateModelsBootstrap( modelNames, threshold, statIntervals, bData, obsvLo
         
         (perAboveIntervals, perAboveIntervalsLarger, perWithinIntervals, perWithinIntervalsLarger, perBelowIntervals, perBelowIntervalsLarger) = calWithinIntervals(bData, predLos, predUps, threshold, largerHalfIdx,k)
 
-        #YP: Removed some old debugging messages
-        print perAboveIntervals
-        print perAboveIntervalsLarger
-        print perBelowIntervals
-        print perBelowIntervalsLarger
-        print perWithinIntervals
-        print perWithinIntervalsLarger
-
         intervalsData.append([perAboveIntervals, perWithinIntervals, perBelowIntervals, perAboveIntervalsLarger, perWithinIntervalsLarger, perBelowIntervalsLarger])
 
         if perWithinIntervals <= 0.70 or perWithinIntervalsLarger <= 0.70:
@@ -467,22 +462,23 @@ def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the pro
     if(threshold >= 1):
         raise ValueError('The fraction of data used as support instances (trainTestSplit) must be less than 1')
 
+    esaDir = os.path.dirname(os.path.realpath(inspect.getfile(inspect.currentframe())))
     #   prepare template files
     logger.debug('Preparing template files')
     if not os.path.exists( fileDir+"/"+modelFileName ):
-        os.system( "cp models.txt %s" % (fileDir+"/"+modelFileName) )
+        os.system( "cp %s/models.txt %s" % (esaDir, fileDir+"/"+modelFileName) )
     if not os.path.exists( fileDir+"/"+latexTemplate ):
-        os.system( "cp template-AutoScaling.tex %s" % (fileDir+"/"+latexTemplate) )
+        os.system( "cp %s/template-AutoScaling.tex %s" % (esaDir, fileDir+"/"+latexTemplate) )
     if not os.path.exists( fileDir+"/"+modelPlotTemplate ):
-        os.system( "cp template-plotModels.plt %s" % (fileDir+"/"+modelPlotTemplate) )
+        os.system( "cp %s/template-plotModels.plt %s" % (esaDir, fileDir+"/"+modelPlotTemplate) )
     if not os.path.exists( fileDir+"/"+residuePlotTemplate ):
-        os.system( "cp template-plotResidues.plt %s" % (fileDir+"/"+residuePlotTemplate) )
+        os.system( "cp %s/template-plotResidues.plt %s" % (esaDir, fileDir+"/"+residuePlotTemplate) )
     #   move the pdflatex input file
     if not os.path.exists( fileDir+"/pdflatex-input.txt" ):
         if(not os.path.exists('pdflatex-input.txt')):
             with open('pdflatex-input.txt','w') as f_out:
                 f_out.write('R\n\n')
-        os.system( "cp pdflatex-input.txt " + fileDir +"/pdflatex-input.txt" )    
+        os.system( "cp " + esaDir + "/pdflatex-input.txt " + fileDir +"/pdflatex-input.txt" )    
   
     #   read in runtimes and summarize
     logger.debug('Reading running times from file.')
