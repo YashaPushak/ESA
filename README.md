@@ -153,9 +153,9 @@ pre-supported scaling models scaling models, for which we provide both the
 To use any of these models, simple copy and paste the appropriate line(s) from
 below into your `model.txt` file:
 
-    Exp,2,@@a@@\times @@b@@^{x}, @@a@@\*@@b@@\*\*x
-    Poly,2,@@a@@\times x^{@@b@@},@@a@@\*x\*\*@@b@@
-    RootExp,2,@@a@@\times @@b@@^{\sqrt{x}},@@a@@\*@@b@@\*\*(x\*\*(0.5))
+    Exp,2,@@a@@\times @@b@@^{x}, @@a@@*@@b@@**x
+    Poly,2,@@a@@\times x^{@@b@@},@@a@@*x**@@b@@
+    RootExp,2,@@a@@\times @@b@@^{\sqrt{x}},@@a@@*@@b@@**(x**(0.5))
    
 Please see the inline comments in `ESA/userDefinitions.py` for instructions on
 how to add additional custom scaling moels.
