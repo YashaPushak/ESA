@@ -7,6 +7,7 @@ numBootstrapSamples : 51
 numPerInstanceBootstrapSamples : 21
 statistic : median
 perInstanceStatistic : median
+modelFileName : models.txt
 numObservations : 50
 window: 101
 runtimeCutoff: 3600

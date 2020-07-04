@@ -39,11 +39,6 @@ def evalModel(x,a,modelName):
     # modelName corresponds to the value from first column in your model.txt file
     # This function should return a numpy array of predictions using the 
     # instantiated version of your model at the instance sizes provided.
-    else:
-        raise ValueError('Unsupported scaling model name in evalModel.'
-                         ' Provided "{}"'
-                         ''.format(modelName))
- 
 
 def fitModelLS(x,y,modelName,weights=None,a0=None):
     #Author: YP
@@ -188,8 +183,7 @@ def fitModelLS(x,y,modelName,weights=None,a0=None):
     # you can use any high-quality optimization procedure that you like
     # to fit your model.
     else:
-        raise ValueError('Unsupported scaling model name in fitModelLS. '
-                         'Provided "{}"'
+        raise ValueError('Unsupported scaling model name. Provided "{}"'
                          ''.format(modelName))
        
     return a
@@ -236,12 +230,6 @@ def getResiduals(x,y,a,modelName):
         return y - linlogsquared(a,x)
     # @TODO: You will need to return the residuals of your model
     # here. See above for examples and notes.
-    else:
-        raise ValueError('Unsupported scaling model name in getResiduals. '
-                         'Provided "{}"'
-                         ''.format(modelName))
- 
-
 
 def linear(a,x):
     return a[0]*x + a[1]

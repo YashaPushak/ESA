@@ -89,6 +89,12 @@ that ESA can run without modification using python v3.7.
 If you don't already have it, you can install numpy by running 
 `pip install -r requirements.txt` from inside ESA's root directory.
 
+Finally, install ESA by running 
+`pip install .`
+or
+`python setupy.py install --user`
+in ESA's root directory.
+
 ## Running ESA
 
 Before you can use ESA on your own data, you 
@@ -157,7 +163,7 @@ below into your `model.txt` file:
     RootExp, 2, @@a@@ \times @@b@@^{\sqrt{x}}, @@a@@*@@b@@**(x**(0.5))
     Poly, 2, @@a@@ \times x^{@@b@@}, @@a@@*x**@@b@@
     PolyLog, 2, @@a@@ \times \log(x) \times x^{@@b@@}, @@a@@*log(x)*x**@@b@@
-    LinLog2, 2, @@a@@ \times \log^2(x) + @@b@@, @@a@@*log(x)**2 + @@b@@
+    LinLog^2, 2, @@a@@ \times \log^2(x) + @@b@@, @@a@@*log(x)**2 + @@b@@
     LinLog+Lin, 2, @@a@@ \times \log(x) + @@b@@ \times x, @@a@@*x*log(x) + @@b@@*log(x)
     Lin, 2, @@a@@ \times x + @@b@@, @@a@@*x+@@b@@
    
