@@ -1,9 +1,9 @@
-#Results (running times) from running the algorithm on scaling-csmacdp0neg instances.
-#Number of independent runs per-instance: 10
-#Running time cut-off: 3600.0
-#Configuration ID: pDEFAULT
-#Parameter call-string: 
-#instance name, instance size, running time #1, running time #2, running time #3, ...
+# Results (running times) from running lingeling on bounded model
+# checking SAT instances obtained by unrolling the HWMCC08 circuit
+# csmacdp0neg to 500 different depths
+# Number of independent runs per-instance: 10
+# Running time cut-off: 3600 CPU seconds
+# instance name, instance size (# of variables), running time #1, running time #2, running time #3, ...
 instances/SAT/bmc/bmc-csmacdp0neg/csmacdp0neg.k1.cnf, 200, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005, 0.0005
 instances/SAT/bmc/bmc-csmacdp0neg/csmacdp0neg.k2.cnf, 1607, 0.008, 0.008, 0.016, 0.008, 0.008, 0.008, 0.008, 0.008, 0.008, 0.016
 instances/SAT/bmc/bmc-csmacdp0neg/csmacdp0neg.k3.cnf, 3196, 0.048, 0.044, 0.048, 0.044, 0.024, 0.04, 0.04, 0.052, 0.032, 0.028
