@@ -336,7 +336,7 @@ def _print_argument_documentation():
     def _bold(header):
         return '<b>{}</b>'.format(header)
     def _list_of_code(aliases):
-        return ', '.join([_code(alias.strip()) for alias in aliases])
+        return ', '.join([_code(alias.strip()[2:]) for alias in aliases])
     def _code(code):
         return '<code>{}</code>'.format(code)
     def _table(description, required, default, aliases):
