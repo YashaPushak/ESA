@@ -1,6 +1,6 @@
-fileName : runtimes-lingeling-bmc-pdtv.csv
+fileName : runtimes-lingeling-bmc-csmac.csv
 algName : Lingeling
-instName : hwmcc08-pdtvisvsar29
+instName : hwmcc08-csmacdp0neg
 trainTestSplit : 0.3
 alpha : 95
 numBootstrapSamples : 51
