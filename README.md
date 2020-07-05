@@ -25,7 +25,16 @@ bins of the same size. In contrast, ESA v2 relaxes this requirement, which
 allows it to be applied to a substantially broader range of interesting and
 important problem applications, since it is often challenging or impossible
 to obtain instance sets with instance sizes grouped in this way for many
-real-world applications. 
+real-world applications. The biggest disadvantage to ESA v2 compared to ESA
+v1.1, is that ESA v2 requires substantially longer to fit all of the scaling
+models to the data for large datasets. For example, running ESA v2 with
+approximately 11 000 instances requires about 1.5 days, whereas this can
+be completed within minutes using ESA v1.1. However, for datasets with
+less than a thousand instances you should be able to run ESA v2 within 
+seconds to minutes. Therefore, If you are constrained by time and
+are able to obtain instances grouped into bins, you may prefer to
+use ESA v1.1 instead (available as an online service, or a command line 
+tool at http://www.cs.ubc.ca/labs/beta/Projects/ESA).  
 
 # Table of Contents
 
