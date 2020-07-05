@@ -36,7 +36,7 @@ class ArgumentParser:
             ('--train-test-split',): {
                 'help': 'Determines how much of the data is used as the training '
                         'set and how much is used as the test set. Should be '
-                        'in (0, 1). The default is 0.3.',
+                        'in (0, 1).',
                 'type': _validate(float, 'The train-test split must be a real '
                                          'number in (0, 1)', 
                                   lambda x: 0 < float(x) < 1)},

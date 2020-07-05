@@ -321,7 +321,7 @@ These settings control the analysis performed by ESA.
 ### train_test_split
 
 <table>
-<tr><td><b>Description</b></td><td>Determines how much of the data is used as the training set and how much is used as the test set. Should be in (0, 1). The default is 0.3.</td></tr>
+<tr><td><b>Description</b></td><td>Determines how much of the data is used as the training set and how much is used as the test set. Should be in (0, 1).</td></tr>
 <tr><td><b>Default</b></td><td>0.4</td></tr>
 <tr><td><b>Aliases</b></td><td><code>--train-test-split</code>, <code>--train_test_split</code>, <code>--trainTestSplit</code></td></tr>
 </table>
