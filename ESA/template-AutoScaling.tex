@@ -68,7 +68,7 @@ This is the automatically generated report on the empirical scaling
 of the running time of @@algName@@ for solving @@instName@@.
 
 
-\section{Methodology} %TODO: Update entire section
+\section{Methodology}
 
 \label{sec:Methodology}
 
@@ -82,14 +82,13 @@ For our scaling analysis, we considered the following parametric models:
 % \end{itemize}
 Note that the approach could be easily extended to other scaling models.
 For fitting parametric scaling models to observed data, we used 
-\quantileRegression{ # TODO Define
-iteratively re-weighted linear least squares to perform quantile 
-regression
-} 
+\quantileRegression{% 
+iteratively re-weighted linear
+}%
 least squres
-\quantileRegression{
+\quantileRegression{%
 to perform quantile
-}
+}%
 regression.
 Since this method works best for linear models, we used 
 log transformations to convert
@@ -97,7 +96,7 @@ non-linear models into linear models. This transformation biases the
 fitted models to more heavily favour the smaller training instance
 sizes, so we used a heuristic error correction term to compensate. 
 Preliminary studies using this fitting method when applied to simulated
-running time dataset with known scaling properties show that using the
+running time datasets with known scaling properties show that using the
 heuristic error correction term improves the quality of the fitted models
 and allows the procedure to fit scaling models consistent with the true,
 underlying scaling of the data.
@@ -105,7 +104,7 @@ underlying scaling of the data.
 % what we fitted the models to, how we assessed model fit
 The fitted models correspond to performance predictions for the empirical
 scaling of the @@statistic@@ of the distribution of running times.
-\randomizedAlgorithm{
+\randomizedAlgorithm{%
 Since @@algName@@ is a randomized algorithm, we analyzed the per-instance 
 @@perInstanceStatistic@@ of @@numRunsPerInstance@@ independent runs for 
 each instance. This means that the model predictions correspond to 
@@ -113,14 +112,14 @@ each instance. This means that the model predictions correspond to
 per-instance @@perInstanceStatistic@@s. Similarly, the running time statistics
 reported throughout this report are statistics of per-instance 
 @@perInstanceStatistic@@s. 
-}
+}%
 %Compared to the mean, the median has two
 %advantages: it is statistically more stable and immune to the presence
 %of a certain amount of timed-out runs.
 To assess the fit of a given
 scaling model to observed data, we used the @@errorType@@ as a loss function.
  
-\medianInterval{
+\medianInterval{%
 Due to the instances for which the running times are unknown, 
 there is uncertainty about the
 precise location of the @@statistic@@s of the running time distributions
@@ -149,15 +148,18 @@ challenge losses for each model.
 means of the @@statistic@@ intervals for each instance size to calculate the median losses.
 However, to better capture both sources of uncertainty for the bootstrap intervals, we 
 calculated the loss interval upper and lower bounds by computing 97.5 and 2.5 quantiles
-for the set of upper bounds and the set of lower bounds on the losses, respectively.}}
+for the set of upper bounds and the set of lower bounds on the losses, respectively.}}%
 \randomizedAlgorithm{Since this analysis was performed on per-instance 
 @@perInstanceStatistic@@s, we also computed these statistics on nested, per-instance 
 bootstrap samples, by first computing @@perInstanceStatistic@@s for 
 @@numPerInstanceBootstrapSamples@@ bootstrap samples for each instance and then 
 randomly selecting one of the per-instance @@perInstanceStatistic@@s when needed.}
 
-
-\updatedYP{
+We calculated the observed point estimates for the @@statistic@@s of the
+data by fitting a linear model to local data with Guassian weights, and
+then recording the observed statistic as the prediction from the linear
+model as the mid-point of the local data.
+\updatedYP{%
 In the following, we say that a scaling model prediction is in-consistent 
 with observed data if the bootstrap confidence interval for the observed data
 is disjoint from the bootstrap confidence interval for the
@@ -176,7 +178,7 @@ data, if the bootstrap confidence interval for the observed @@statistic@@
 within the bootstrap confidence interval for predicted
 running times.}
 Also, we define the residue of a model at a given size as the observed 
-point estimate (obtained by fitting a linear to the local data) less the 
+point estimate less the 
 predicted value using the fitted running time scaling model (fitted to
 the set of training data).
 
@@ -189,7 +191,7 @@ The dataset contains running times of the @@algName@@ algorithm solving
 running times into two categories, \emph{support} or \emph{training} 
 instances ($n\leq@@largestSupportSize@@$) and \emph{challenge} or 
 \emph{test} instances ($n>@@largestSupportSize@@$) with @@numInstsTrain@@ 
-and @@numInstsTest@@, respectively. The
+and @@numInstsTest@@ instances, respectively. The
 details of the dataset can be found in Tables \ref{tab:Details-dataset-support} 
 and \ref{tab:Details-dataset-challenge}.
 \begin{table*}
@@ -200,7 +202,8 @@ and \ref{tab:Details-dataset-challenge}.
 \caption{\label{tab:Details-dataset-support} Details of the running time 
 dataset used as support data for model fitting. 
 \randomizedAlgorithm{The reported statistics are of the per-instance 
-@@perInstanceStatistic@@ running times.}}
+@@perInstanceStatistic@@ running times.} The ``\# of instances'' is the
+sum of the weights of the instances used to calculate these statistics.}
 \end{table*}
 
 \begin{table*}
@@ -211,7 +214,8 @@ dataset used as support data for model fitting.
 \caption{\label{tab:Details-dataset-challenge} Details of the running time 
 dataset used as challenge data for model fitting.
 \randomizedAlgorithm{The reported statistics are of the per-instance 
-@@perInstanceStatistic@@ running times.}}
+@@perInstanceStatistic@@ running times.} The ``\# of instances'' is the
+sum of the weights of the instances used to calculate these statistics.}
 \end{table*}
 
 % 
@@ -268,7 +272,7 @@ and the residues for the models in Figure~\ref{fig:Fitted-residues}.
 The models correspond to predictions for the @@statistic@@s of the 
 \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times of
 @@algName@@ solving the set of @@instName@@ 
-of $@@supportSizes@@$ variables, and are challenged by the @@statistic@@s of 
+with $@@supportSizes@@$ variables, and are challenged by the @@statistic@@s of 
 the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@}
 running times of $@@challengeSizes@@$ variables.}
 \end{figure}

@@ -166,7 +166,7 @@ def prepareRuntimesTexTables(logger, sizesTrain, runtimesTrain, sizesTest, runti
     #print(obsvs)
     #print(len(statw))
     
-    csvHelper.genCSV(".", "table_Details-dataset.csv", list(obsvs), ["# instances", "mean", "Q(0.1)", "Q(0.25)", "median", "Q(0.75)", "Q(0.9)"], [statw, data['mean'], data['q0.10'], data['q0.25'], data['q0.50'], data['q0.75'], data['q0.90']])
+    csvHelper.genCSV(".", "table_Details-dataset.csv", list(obsvs), ["# of instances", "mean", "Q(0.1)", "Q(0.25)", "median", "Q(0.75)", "Q(0.9)"], [statw, data['mean'], data['q0.10'], data['q0.25'], data['q0.50'], data['q0.75'], data['q0.90']])
 
     threshold = sum(np.array(obsvs) <= sizeThreshold)
 

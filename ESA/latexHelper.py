@@ -106,7 +106,7 @@ def genTexTableBootstrapParas(algName, modelNames, modelNumParas, paraLos, paraU
     for i in range(0, len(modelNames)):
         if i == 0:
             res += "\\multirow{%d}{*}{%s}" % (len(modelNames), escapeNonAlNumChars( algName ) )
-        res += prepareTableRow(" & %s." % (modelNames[i]), [genInterval(numToTex(paraLos[i][j], 5), numToTex(paraUps[i][j], 5)) for j in range(0, len(paraLos[i])) ])
+        res += prepareTableRow(" & %s." % (modelNames[i]), [genInterval(numToTex(paraLos[i][j], 7), numToTex(paraUps[i][j], 7)) for j in range(0, len(paraLos[i])) ])
     res += "\\hline \n"
     res += "\\end{tabular} \n"
     with open(texFileName, "w") as texFile:
@@ -165,7 +165,7 @@ def escapeNonAlNumChars( instr ):
             res += char
     return res
 
-def genTexFile(fileDir, algName, instName, numObsv, sizesTrain, sizesTest, numInstsTrain, numInstsTest, sizeThreshold, modelNames, modelReps, modelNumParas, numBootstrapSamples, statistic, numRunsPerInstance, perInstanceStatistic, numPerInstanceBootstrapSamples, tableDetailsSupportFileName, tableDetailsChallengeFileName, tableFittedModelsFileName, tableBootstrapIntervalsParaFileName, tableBootstrapIntervalsSupportFileName, tableBootstrapIntervalsChallengeFileName, tableBootstrapModelLossFileName, figureCdfsFileName, figureFittedModelsFileName, figureFittedResiduesFileName, analysisSummary, winnerSelectRule, latexTemplate):
+def genTexFile(fileDir, algName, instName, numObsv, sizesTrain, sizesTest, numInstsTrain, numInstsTest, sizeThreshold, modelNames, modelReps, modelNumParas, numBootstrapSamples, statistic, numRunsPerInstance, perInstanceStatistic, numPerInstanceBootstrapSamples, tableDetailsSupportFileName, tableDetailsChallengeFileName, tableFittedModelsFileName, tableBootstrapIntervalsParaFileName, tableBootstrapIntervalsSupportFileName, tableBootstrapIntervalsChallengeFileName, tableBootstrapModelLossFileName, figureCdfsFileName, figureFittedModelsFileName, figureFittedResiduesFileName, analysisSummary, winnerSelectRule, latexTemplate, alpha):
     #Author: Zongxu Mu, Yasha Pushak
     #Last modified: March 21st, 2017
     modelsStr = "\\begin{itemize} \n"
@@ -258,7 +258,7 @@ def genFittedModelsTexTable(algName, modelNames, modelReps, fittedModels, losses
         if lossesTest[i] == min(lossesTest):
             modelParasTuple = ()
             for k in range(0, len(fittedModels[i])):
-                modelParasTuple += ( numToTex(fittedModels[i][k], 5), )
+                modelParasTuple += ( numToTex(fittedModels[i][k], 7), )
             res += prepareTableRow(" & %s. Model" % modelNames[i], \
                 [ bold( fillModelRepsWValues( modelReps[i], modelParasTuple ), True ), \
                 bold( numToTex(lossesTrain[i], 5), True ), \
@@ -266,7 +266,7 @@ def genFittedModelsTexTable(algName, modelNames, modelReps, fittedModels, losses
         else:
             modelParasTuple = ()
             for k in range(0, len(fittedModels[i])):
-                modelParasTuple += ( numToTex(fittedModels[i][k], 5) ,)
+                modelParasTuple += ( numToTex(fittedModels[i][k], 7) ,)
             res += prepareTableRow(" & %s. Model" % modelNames[i], \
                 [ "$%s$" % fillModelRepsWValues( modelReps[i], modelParasTuple ), \
                 "$%s$" % numToTex( lossesTrain[i] , 5 ), \

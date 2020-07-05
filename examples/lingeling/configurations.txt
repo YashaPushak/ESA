@@ -1,6 +1,6 @@
 fileName : runtimes-lingeling-bmc-csmac.csv
 algName : Lingeling
-instName : hwmcc08-csmacdp0neg
+instName : the csmacdp0neg HWMCC08 circuit bounded model checking SAT instances
 trainTestSplit : 0.3
 alpha : 95
 numBootstrapSamples : 51
@@ -8,7 +8,7 @@ numPerInstanceBootstrapSamples : 21
 statistic : median
 perInstanceStatistic : median
 modelFileName : models.txt
-numObservations : 50
+numObservations : 25
 window: 101
 runtimeCutoff: 3600
 logLevel : info
