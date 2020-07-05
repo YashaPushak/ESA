@@ -27,6 +27,20 @@ important problem applications, since it is often challenging or impossible
 to obtain instance sets with instance sizes grouped in this way for many
 real-world applications. 
 
+# Table of Contents
+
+   * [Empirical Scaling Analyzer (ESA) v2](#empirical-scaling-analyzer-esa-v2)
+   * [Table of Contents](#table-of-contents)
+   * [Quickstart Guide](#quickstart-guide)
+      * [Performance Measurement Datasets](#performance-measurement-datasets)
+         * [Instance Set Properties](#instance-set-properties)
+         * [Collecting Performance Measurements - <strong>Important</strong>](#collecting-performance-measurements---important)
+      * [Installing ESA](#installing-esa)
+      * [Running ESA](#running-esa)
+      * [Instance File Format](#instance-file-format)
+      * [Custom Scaling Models](#custom-scaling-models)
+   * [Configuration File Arguments](#configuration-file-arguments)
+
 # Quickstart Guide
 
 This quickstart guide will demonstrate how to use ESA using a simple
