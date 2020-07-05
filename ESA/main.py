@@ -14,6 +14,8 @@ import bootstrapHelper
 import csvHelper
 import gnuplotHelper
 import latexHelper
+import args
+
 
 #def inputDefToPythonDef( md ):
 #    idx = md.find( 'p', 0 )
@@ -364,85 +366,52 @@ def calWithinIntervals(data,los,ups,threshold,largerHalfIdx,k):
 def run(fileDir, fileName="runtimes.csv", algName="Algorithm", instName="the problem instances", modelFileName="models.txt", threshold=0, alpha=95, numBootstrapSamples=100, statistic="median", toModifyModelDefaultParas=False, tableDetailsSupportFileName="table_Details-dataset-support", tableDetailsChallengeFileName="table_Details-dataset-challenge", tableFittedModelsFileName="table_Fitted-models", tableBootstrapIntervalsParaFileName="table_Bootstrap-intervals-of-parameters", tableBootstrapIntervalsSupportFileName="table_Bootstrap-intervals_support", tableBootstrapIntervalsChallengeFileName="table_Bootstrap-intervals_challenge", figureCdfsFileName="cdfs", figureFittedModelsFileName="fittedModels", figureFittedResiduesFileName="fittedResidues", latexTemplate = "template-AutoScaling.tex", modelPlotTemplate = "template-plotModels.plt", residuePlotTemplate = "template-plotResidues.plt", gnuplotPath = 'auto', numRunsPerInstance = 0, perInstanceStatistic="median", numPerInstanceBootstrapSamples=10,logLevel = "INFO", logFile='stdout', stretchSize=[]):
     startTime = time.time()
 
-    #   get parameter values
-    if os.path.exists( fileDir+"/configurations.txt" ):
-        with open( fileDir+"/configurations.txt", "r") as configFile:
-            for line in configFile:
-                terms = line.split(":")
-                if len(terms) == 2:
-                    if terms[0].strip() == "fileName":
-                        fileName = terms[1].strip()
-                    if terms[0].strip() == "algName":
-                        algName = terms[1].strip()
-                    if terms[0].strip() == "instName":
-                        instName = terms[1].strip()
-                    if terms[0].strip() == "modelFileName":
-                        modelFileName = terms[1].strip()
-                    if terms[0].strip() == "trainTestSplit":
-                        threshold = float( terms[1] )
-                    if terms[0].strip() == "alpha":
-                        alpha = int( terms[1] )
-                    if terms[0].strip() == "numBootstrapSamples":
-                        numBootstrapSamples = int( terms[1].strip() )
-                    if terms[0].strip() == "statistic":
-                        statistic = terms[1].strip()
-                        if(statistic[0].lower() == 'q'):
-                            quantile = float(statistic[1:])
-                            if(quantile > 1):
-                                quantile/=100
-                            statistic = 'Q' + str(quantile)
-                    if terms[0].strip() == "latexTemplate":
-                        latexTemplate = terms[1].strip()
-                    if terms[0].strip() == "modelPlotTemplate":
-                        modelPlotTemplate = terms[1].strip()
-                    if terms[0].strip() == "residuePlotTemplate":
-                        residuePlotTemplate = terms[1].strip()
-                    #YP: Added gnuplot path to configuration file
-                    if terms[0].strip() == "gnuplotPath":
-                        gnuplotPath = terms[1].strip() + '/'
-                    #YP: Added numRunsPerInstance to configuration file
-                    if terms[0].strip() == "numRunsPerInstance":
-                        numRunsPerInstance = int( terms[1].strip() )
-                    #YP: Added perInstanceStatistic to configuration file
-                    if terms[0].strip() == "perInstanceStatistic":
-                        perInstanceStatistic = terms[1].strip()
-                    #YP: Added numPerInstanceBootstrapSamples to configuration file
-                    if terms[0].strip() == "numPerInstanceBootstrapSamples":
-                        numPerInstanceBootstrapSamples = int(terms[1].strip())
-                    #YP: Added modifyDefaultParameters to configuration file
-                    if terms[0].strip() == "modifyDefaultParameters":
-                        toModifyModelDefaultParas = (terms[1].strip() == "True")
-                    if terms[0].strip() == 'stretchSize':
-                        if('[' in terms[1]):
-                            stretchSize = []
-                            for item in terms[1].strip().replace('[','').replace(']','').split(','):
-                                stretchSize.append(float(item))
-                            
-                        else:
-                            stretchSize = [int(terms[1].strip())]
-                        stretchSize = sorted(stretchSize)
-                        #stretchSize.append(stretchSize[-1]*10)
-                    if terms[0].strip() == 'logLevel':
-                        logLevel = terms[1].strip()
-                    if terms[0].strip() == 'logFile':
-                        logFile = terms[1].strip()
-                    if terms[0].strip() == 'numObservations':
-                        numObsv = int(terms[1].strip())
-                        obsvs = None
-                    if terms[0].strip() == 'observations':
-                       if('[' in terms[1]):
-                            obsvs = []
-                            for item in terms[1].strip().replace('[','').replace(']','').split(','):
-                                obsvs.append(float(item))
-                            
-                       else:
-                            continue
-                       obsvs = sorted(obsvs)
-                       numObsv = len(obsvs)
-                    if terms[0].strip() == 'window':
-                        window = int(terms[1].strip())
-                    if terms[0].strip() == 'runtimeCutoff':
-                        runtimeCutoff = float(terms[1].strip())
+    # Parse the arguments using the new argument parser. Note that this completely
+    # ignores some of the default values defined above.
+    arguments, _ = args.ArgumentParser().parse_arguments(fileDir)
+    fileName = arguments['file_name']
+    algName = arguments['alg_name']
+    instName = arguments['inst_name']
+    if 'model_file_name' in arguments:
+        modelFileName = arguments['model_file_name']
+    threshold = arguments['train_test_split']
+    alpha = arguments['alpha']
+    numBootstrapSamples = arguments['num_bootstrap_samples']
+    statistic = arguments['statistic']
+    if 'latex_template' in arguments:
+        latexTemplate = arguments['latex_template']
+    if 'model_plot_template' in arguments:
+        modelPlotTemplate = arguments['model_plot_template']
+    if 'residue_plot_template' in arguments:
+        residuePlotTemplate = arguments['residue_plot_template']
+    gnuplotPath = arguments['gnuplot_path']
+    numRunsPerInstance = arguments['num_runs_per_instance']
+    perInstanceStatistic = arguments['per_instance_statistic']
+    numPerInstanceBootstrapSamples = arguments['num_per_instance_bootstrap_samples']
+    logLevel = arguments['log_level']
+    logFile = arguments['log_file']
+    numObsv = arguments['num_observations']
+    obsvs = arguments['observations']
+    window = arguments['window']
+    runtimeCutoff = arguments['runtime_cutoff']
+
+    if(statistic[0].lower() == 'q'):
+        quantile = float(statistic[1:])
+        if(quantile > 1):
+            quantile/=100
+        statistic = 'Q' + str(quantile)
+    if gnuplotPath != 'auto':
+        gnuplotPath += '/'
+    if obsvs == 'None':
+        obsvs = None
+    else:
+        terms = ['', obsvs]
+        if('[' in terms[1]):
+            obsvs = []
+            for item in terms[1].strip().replace('[','').replace(']','').split(','):
+                obsvs.append(float(item))
+            obsvs = sorted(obsvs)
+            numObsv = len(obsvs)
 
     numericLevel = getattr(logging, logLevel.upper(), None)
     if not isinstance(numericLevel, int):

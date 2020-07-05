@@ -1,0 +1,164 @@
+## Setup Arguments
+
+These settings control the analysis performed by ESA
+
+### alg_name
+
+<table>
+<tr><td><b>Description</b></td><td>The name of the algorithm for which you are performing scaling analysis.</td></tr>
+<tr><td><b>Default</b></td><td>Algorithm</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--alg-name</code>, <code>--alg_name</code>, <code>--algName</code>, <code>--algorithm-name</code>, <code>--algorithm_name</code>, <code>--algorithmName</code></td></tr>
+</table>
+
+### alpha
+
+<table>
+<tr><td><b>Description</b></td><td>The confidence level used to calculate the confidence intervals. If less than 1, will be interpretted as 100*alpha. Must be in (0, 100)</td></tr>
+<tr><td><b>Default</b></td><td>95.0</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--alpha</code>, <code>--confidence-level</code>, <code>--confidence_level</code>, <code>--confidenceLevel</code></td></tr>
+</table>
+
+### file_name
+
+<table>
+<tr><td><b>Description</b></td><td>The name of the file that contains the running times (or other performance metric) of your algorithm.</td></tr>
+<tr><td><b>Required</b></td><td>Yes</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--file-name</code>, <code>--file_name</code>, <code>--fileName</code></td></tr>
+</table>
+
+### gnuplot_path
+
+<table>
+<tr><td><b>Description</b></td><td>The path to gnuplot's binary.</td></tr>
+<tr><td><b>Default</b></td><td>auto</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--gnuplot-path</code>, <code>--gnuplot_path</code>, <code>--gnuplotPath</code></td></tr>
+</table>
+
+### inst_name
+
+<table>
+<tr><td><b>Description</b></td><td>The name of the instance set on which your algorithm was evaluated.</td></tr>
+<tr><td><b>Default</b></td><td>the problem instances</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--inst-name</code>, <code>--inst_name</code>, <code>--instName</code>, <code>--instance-name</code>, <code>--instance_name</code>, <code>--instanceName</code></td></tr>
+</table>
+
+### latex_template
+
+<table>
+<tr><td><b>Description</b></td><td>The name of the LaTeX template to use when generating the automated technical report pdf document.</td></tr>
+<tr><td><b>Default</b></td><td>template-AutoScaling.tex</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--latex-template</code>, <code>--latex_template</code>, <code>--latexTemplate</code></td></tr>
+</table>
+
+### log_file
+
+<table>
+<tr><td><b>Description</b></td><td>The file to which ESA should log information.</td></tr>
+<tr><td><b>Default</b></td><td>stdout</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--log-file</code>, <code>--log_file</code>, <code>--logFile</code></td></tr>
+</table>
+
+### log_level
+
+<table>
+<tr><td><b>Description</b></td><td>Controls the verbosity of the output. Choose from "warning", "info" and "debug"</td></tr>
+<tr><td><b>Default</b></td><td>info</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--log-level</code>, <code>--log_level</code>, <code>--logLevel</code></td></tr>
+</table>
+
+### model_file_name
+
+<table>
+<tr><td><b>Description</b></td><td>The name of the file that determines which models are fitted to the data. This file also defines how the models are formatted in the LaTeX report and provides the model definitions for gnuplot.</td></tr>
+<tr><td><b>Default</b></td><td>models.txt</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--model-file-name</code>, <code>--model_file_name</code>, <code>--modelFileName</code></td></tr>
+</table>
+
+### num_bootstrap_samples
+
+<table>
+<tr><td><b>Description</b></td><td>The number of (outer) bootstrap samples used.</td></tr>
+<tr><td><b>Default</b></td><td>1001</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--num-bootstrap-samples</code>, <code>--num_bootstrap_samples</code>, <code>--numBootstrapSamples</code>, <code>--n-bootstrap</code>, <code>--n_bootstrap</code>, <code>--nBootstrap</code></td></tr>
+</table>
+
+### num_observations
+
+<table>
+<tr><td><b>Description</b></td><td>The number of points for which ESA will calculate statistics to determine whether or not the model predictions are consistent with the observations.</td></tr>
+<tr><td><b>Default</b></td><td>50</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--num-observations</code>, <code>--num_observations</code>, <code>--numObservations</code></td></tr>
+</table>
+
+### num_per_instance_bootstrap_samples
+
+<table>
+<tr><td><b>Description</b></td><td>The number of (inner) bootstrap samples. That is, the number of bootstrap samples used for independent runs per instance. This is known to be a less important parameter to set to a large value than the number of outer bootstrap samples.</td></tr>
+<tr><td><b>Default</b></td><td>101</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--num-per-instance-bootstrap-samples</code>, <code>--num_per_instance_bootstrap_samples</code>, <code>--numPerInstanceBootstrapSamples</code>, <code>--per-instance-n-bootstrap</code>, <code>--per_instance_n_bootstrap</code>, <code>--perInstanceNBootstrap</code></td></tr>
+</table>
+
+### num_runs_per_instance
+
+<table>
+<tr><td><b>Description</b></td><td>The number of independent runs of the algorithm that were performed on each instance. This is only used for validating your dataset. ESA will automatically determine the number from the file provided.</td></tr>
+<tr><td><b>Default</b></td><td>0</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--num-runs-per-instance</code>, <code>--num_runs_per_instance</code>, <code>--numRunsPerInstance</code></td></tr>
+</table>
+
+### observations
+
+<table>
+<tr><td><b>Description</b></td><td>Instead of providing the number of observations you can also instead provide the locations of all of the observations. Should be an array of instance sizes.</td></tr>
+<tr><td><b>Default</b></td><td>None</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--observations</code></td></tr>
+</table>
+
+### per_instance_statistic
+
+<table>
+<tr><td><b>Description</b></td><td>The statistic calculated over independent runs of the algorithm on the same instance.</td></tr>
+<tr><td><b>Default</b></td><td>median</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--per-instance-statistic</code>, <code>--per_instance_statistic</code>, <code>--perInstanceStatistic</code></td></tr>
+</table>
+
+### residue_plot_template
+
+<table>
+<tr><td><b>Description</b></td><td>The name of the gnuplote templateto use for plotting the residues of the fitted models.</td></tr>
+<tr><td><b>Default</b></td><td>template-plotResidues.plt</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--residue-plot-template</code>, <code>--residue_plot_template</code>, <code>--residuePlotTemplate</code></td></tr>
+</table>
+
+### runtime_cutoff
+
+<table>
+<tr><td><b>Description</b></td><td>The running time cutoff that you used with your algorithm.</td></tr>
+<tr><td><b>Default</b></td><td>inf</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--runtime-cutoff</code>, <code>--runtime_cutoff</code>, <code>--runtimeCutoff</code></td></tr>
+</table>
+
+### statistic
+
+<table>
+<tr><td><b>Description</b></td><td>The statistic for which ESA should compute the scaling of the algorithm. Supported options are "median", "mean" and arbitrary quantiles. For example, the 95th quantile can be selected as "q95".</td></tr>
+<tr><td><b>Default</b></td><td>median</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--statistic</code></td></tr>
+</table>
+
+### train_test_split
+
+<table>
+<tr><td><b>Description</b></td><td>Determines how much of the data is used as the training set and how much is used as the test set. Should be in (0, 1). The default is 0.3.</td></tr>
+<tr><td><b>Default</b></td><td>0.4</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--train-test-split</code>, <code>--train_test_split</code>, <code>--trainTestSplit</code></td></tr>
+</table>
+
+### window
+
+<table>
+<tr><td><b>Description</b></td><td>The number of instances to be used in the sliding bootstrap window.</td></tr>
+<tr><td><b>Default</b></td><td>50</td></tr>
+<tr><td><b>Aliases</b></td><td><code>--window</code>, <code>--window-size</code>, <code>--window_size</code>, <code>--windowSize</code></td></tr>
+</table>
+

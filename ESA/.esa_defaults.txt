@@ -1,0 +1,20 @@
+alg-name : Algorithm
+inst-name : the problem instances
+model-file-name : models.txt
+train-test-split : 0.4
+alpha : 95
+num-bootstrap-samples : 1001
+statistic : median
+latex-template : template-AutoScaling.tex
+model-plot-template : template-plotModels.plt
+residue-plot-template : template-plotResidues.plt
+gnuplot-path : auto
+num-runs-per-instance : 0
+per-instance-statistic : median
+num-per-instance-bootstrap-samples : 101
+log-level : info
+log-file : stdout
+num-observations : 50
+observations : None
+window : 50
+runtime-cutoff : inf
