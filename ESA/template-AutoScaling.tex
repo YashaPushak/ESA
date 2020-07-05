@@ -1,6 +1,6 @@
 %% template-AutoScaling.tex
 %% Author: Zongxu Mu, Yasha Pushak
-%% This is the LaTeX template file for Empirical Scaling Analyser (ESA) v1.1.
+%% This is the LaTeX template file for Empirical Scaling Analyser (ESA) v2.
 %% ESA takes the template, replace variables with their corresponding values,
 %%	and generates an output file named AutoScaling.tex.
 %% You may compile this file alone without running ESA to see how the output looks like.
@@ -41,6 +41,7 @@
 
 \newcommand{\medianInterval}[1]{}
 \newcommand{\randomizedAlgorithm}[1]{}
+\newcommand{\quantileRegression}[1]{}
 @@customCommands@@
 
 \makeatletter
@@ -80,22 +81,45 @@ For our scaling analysis, we considered the following parametric models:
 % \item $Poly\left[a,b\right]\left(n\right)=a\cdot n^{b}$ \quad{}(2-parameter polynomial). 
 % \end{itemize}
 Note that the approach could be easily extended to other scaling models.
-For fitting parametric scaling models to observed data, we used the
-non-linear least-squares Levenberg-Marquardt algorithm. 
+For fitting parametric scaling models to observed data, we used 
+\quantileRegression{ # TODO Define
+iteratively re-weighted linear least squares to perform quantile 
+regression
+} 
+least squres
+\quantileRegression{
+to perform quantile
+}
+regression.
+Since this method works best for linear models, we used 
+log transformations to convert
+non-linear models into linear models. This transformation biases the
+fitted models to more heavily favour the smaller training instance
+sizes, so we used a heuristic error correction term to compensate. 
+Preliminary studies using this fitting method when applied to simulated
+running time dataset with known scaling properties show that using the
+heuristic error correction term improves the quality of the fitted models
+and allows the procedure to fit scaling models consistent with the true,
+underlying scaling of the data.
 
 % what we fitted the models to, how we assessed model fit
-Models were fitted to performance observations in the form of @@statistic@@s
-of the distributions of running times over sets of instances for given
-$n$, the instance size.
+The fitted models correspond to performance predictions for the empirical
+scaling of the @@statistic@@ of the distribution of running times.
 \randomizedAlgorithm{
-Since @@algName@@ is a randomized algorithm, we analyzed the per-instance @@perInstanceStatistic@@ of @@numRunsPerInstance@@ independent runs for each instance. This means that models were fitted to @@statistic@@s of per-instance @@perInstanceStatistic@@s. Similarly, the running time statistics reported throughout this report are statistics of per-instance @@perInstanceStatistic@@s. 
+Since @@algName@@ is a randomized algorithm, we analyzed the per-instance 
+@@perInstanceStatistic@@ of @@numRunsPerInstance@@ independent runs for 
+each instance. This means that the model predictions correspond to 
+@@statistic@@s of 
+per-instance @@perInstanceStatistic@@s. Similarly, the running time statistics
+reported throughout this report are statistics of per-instance 
+@@perInstanceStatistic@@s. 
 }
 %Compared to the mean, the median has two
 %advantages: it is statistically more stable and immune to the presence
 %of a certain amount of timed-out runs.
 To assess the fit of a given
-scaling model to observed data, we used root-mean-square error (RMSE). 
-
+scaling model to observed data, we used the @@errorType@@ as a loss function.
+ 
 \medianInterval{
 Due to the instances for which the running times are unknown, 
 there is uncertainty about the
@@ -103,26 +127,34 @@ precise location of the @@statistic@@s of the running time distributions
 at each such $n$, and we can only provide bounds on
 those @@statistic@@s instead. Closely following \cite{dubois2015on}, we calculate
 these bounds based on the best-and worst-case scenarios, in which all instances with unknown running times
-are easiest or hardest, respectively.
+are easiest (required 0 running time) or hardest (required infinite running time), respectively.
 We note that these are not confidence
 intervals, since we can guarantee the actual @@statistic@@ running
 times to lie within them.
-We also calculate RMSEs and confidence intervals based on these bounds.
+We also calculate model losses and confidence intervals based on these bounds.
 }
 
 % bootstrap confidence intervals
-Closely following \cite{hoos2009bootstrap,hoos2014empirical}, we
-computed 95\% bootstrap confidence intervals for the performance predictions
+Closely following \cite{PusHoo20}, we
+computed @@alpha@@\% bootstrap confidence intervals for the performance predictions
 obtained from our scaling models, based on @@numBootstrapSamples@@ bootstrap samples
 per instance set and @@numBootstrapSamples@@ automatically fitted variants of each scaling
 model. 
-\bestBoot{To extend this idea, we calculated support and challenge RMSEs for each of the fitted models' predictions and the corresponding
+\bestBoot{To extend this idea, we calculated training and challenge losses for 
+each of the fitted models' predictions and the corresponding
 bootstrap samples of the observed data. We used these bootstrap sample
-RMSEs to calculate median and 95\% confidence intervals of the support and challenge RMSEs for each model. 
-\medianInterval{In order to handle the unknown running times, we used the geometric means of the @@statistic@@ intervals for each instance size to calculate the median RMSEs.
-However, to better capture both sources of uncertainty for the bootstrap intervals, we calculated the RMSE interval upper and lower bounds by computing 97.5 and 2.5 quantiles
-for the set of upper bounds and the set of lower bounds on the RMSEs, respectively.}}
-\randomizedAlgorithm{Since this analysis was performed on per-instance @@perInstanceStatistic@@s, we also computed these statistics on nested, per-instance bootstrap samples, by first computing @@perInstanceStatistic@@s for @@numPerInstanceBootstrapSamples@@ bootstrap samples for each instance and then randomly selecting one of the per-instance @@perInstanceStatistic@@s when needed.}
+losses to calculate median and 95\% confidence intervals of the support and 
+challenge losses for each model. 
+\medianInterval{In order to handle the unknown running times, we used the geometric 
+means of the @@statistic@@ intervals for each instance size to calculate the median losses.
+However, to better capture both sources of uncertainty for the bootstrap intervals, we 
+calculated the loss interval upper and lower bounds by computing 97.5 and 2.5 quantiles
+for the set of upper bounds and the set of lower bounds on the losses, respectively.}}
+\randomizedAlgorithm{Since this analysis was performed on per-instance 
+@@perInstanceStatistic@@s, we also computed these statistics on nested, per-instance 
+bootstrap samples, by first computing @@perInstanceStatistic@@s for 
+@@numPerInstanceBootstrapSamples@@ bootstrap samples for each instance and then 
+randomly selecting one of the per-instance @@perInstanceStatistic@@s when needed.}
 
 
 \updatedYP{
@@ -132,24 +164,32 @@ is disjoint from the bootstrap confidence interval for the
 predicted @@statistic@@ \randomizedAlgorithm{of per-instance 
 @@perInstanceStatistic@@}
  running times; we say that a scaling model prediction is weakly consistent 
-with the observed data if the bootstrap confidence interval for the prediction overlaps with the bootstrap confidence interval for the observed data;
+with the observed data if the bootstrap confidence interval for the prediction
+overlaps with the bootstrap confidence interval for the observed data;
 %\medianInterval{we say that a scaling model prediction is consistent 
 %with observed data, if the interval for observed @@statistic@@ \randomizedAlgorithm{of per-instance @@perInstanceStatistic@@} running times
 %overlaps with the
 %bootstrap confidence interval for predicted running times;} 
 and, we say that a scaling model is strongly consistent with observed
-data, if the bootstrap confidence interval for the observed @@statistic@@ \randomizedAlgorithm{of per-instance @@perInstanceStatistic@@s} is fully contained
+data, if the bootstrap confidence interval for the observed @@statistic@@
+ \randomizedAlgorithm{of per-instance @@perInstanceStatistic@@s} is fully contained
 within the bootstrap confidence interval for predicted
 running times.}
 Also, we define the residue of a model at a given size as the observed 
-point estimate less the predicted value.
+point estimate (obtained by fitting a linear to the local data) less the 
+predicted value using the fitted running time scaling model (fitted to
+the set of training data).
 
 
 \section{Dataset Description}
 
 The dataset contains running times of the @@algName@@ algorithm solving
-@@numInsts@@ instances of different sizes \randomizedAlgorithm{with @@numRunsPerInstance@@ independent runs per instance}. We split the running times into
-two categories, support ($n\leq@@largestSupportSize@@$) and challenge ($n>@@largestSupportSize@@$) with @@numInstsTrain@@ and @@numInstsTest@@, respectively.. The
+@@numInsts@@ instances of different sizes \randomizedAlgorithm{with 
+@@numRunsPerInstance@@ independent runs per instance}. We split the 
+running times into two categories, \emph{support} or \emph{training} 
+instances ($n\leq@@largestSupportSize@@$) and \emph{challenge} or 
+\emph{test} instances ($n>@@largestSupportSize@@$) with @@numInstsTrain@@ 
+and @@numInstsTest@@, respectively. The
 details of the dataset can be found in Tables \ref{tab:Details-dataset-support} 
 and \ref{tab:Details-dataset-challenge}.
 \begin{table*}
@@ -157,7 +197,10 @@ and \ref{tab:Details-dataset-challenge}.
 @@table-Details-dataset-support@@
 \par\end{centering}
 
-\caption{\label{tab:Details-dataset-support} Details of the running time dataset used as support data for model fitting. \randomizedAlgorithm{The reported statistics are of the per-instance @@perInstanceStatistic@@ running times.}}
+\caption{\label{tab:Details-dataset-support} Details of the running time 
+dataset used as support data for model fitting. 
+\randomizedAlgorithm{The reported statistics are of the per-instance 
+@@perInstanceStatistic@@ running times.}}
 \end{table*}
 
 \begin{table*}
@@ -165,7 +208,10 @@ and \ref{tab:Details-dataset-challenge}.
 @@table-Details-dataset-challenge@@
 \par\end{centering}
 
-\caption{\label{tab:Details-dataset-challenge} Details of the running time dataset used as challenge data for model fitting. \randomizedAlgorithm{The reported statistics are of the per-instance @@perInstanceStatistic@@ running times.}}
+\caption{\label{tab:Details-dataset-challenge} Details of the running time 
+dataset used as challenge data for model fitting.
+\randomizedAlgorithm{The reported statistics are of the per-instance 
+@@perInstanceStatistic@@ running times.}}
 \end{table*}
 
 % 
@@ -187,11 +233,13 @@ and \ref{tab:Details-dataset-challenge}.
 
 \label{sec:Results}
 
-We first fitted our parametric scaling models to the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times
+We first fitted our parametric scaling models to the 
+@@statistic@@s of the 
+\randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times
 of @@algName@@, as described in Section \ref{sec:Methodology}. The
-models were fitted using the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times for $@@supportSizes@@$
-(support) and later challenged with the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times for $@@challengeSizes@@$.
-This resulted in the models, shown along with RMSEs on support and
+models were fitted using the training instance data and later 
+challenged with the test instance data.
+This resulted in the models, shown along with losses on support and
 challenge data, shown in Table~\ref{tab:Fitted-models}.
 \begin{table}[tb]
 \begin{centering}
@@ -199,12 +247,15 @@ challenge data, shown in Table~\ref{tab:Fitted-models}.
 % \input{table_Fitted-models}
 \par\end{centering}
 
-\caption{\label{tab:Fitted-models}Fitted models of the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times and RMSE
+\caption{\label{tab:Fitted-models}Fitted models of the @@statistic@@s 
+of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running 
+times and loss
 values (in CPU sec). The models yielding the most
-accurate predictions (as per RMSEs on challenge data) are shown in
+accurate predictions (as per losses on challenge data) are shown in
 boldface.}
 \end{table}
-In addition, we illustrate the fitted models of @@algName@@ in Figure~\ref{fig:Fitted-models},
+In addition, we illustrate the fitted models of @@algName@@ in 
+Figure~\ref{fig:Fitted-models},
 and the residues for the models in Figure~\ref{fig:Fitted-residues}.
 \begin{figure}[tb]
 \noindent \begin{centering}
@@ -212,10 +263,13 @@ and the residues for the models in Figure~\ref{fig:Fitted-residues}.
 % \includegraphics[width=0.8\textwidth]{fittedModels}
 \par\end{centering}
 
-\caption{\label{fig:Fitted-models} Fitted models of the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times. 
-The models are fitted with the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times of
+\caption{\label{fig:Fitted-models} Fitted models of the @@statistic@@s of the 
+\randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times. 
+The models correspond to predictions for the @@statistic@@s of the 
+\randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times of
 @@algName@@ solving the set of @@instName@@ 
-of $@@supportSizes@@$ variables, and are challenged by the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@}
+of $@@supportSizes@@$ variables, and are challenged by the @@statistic@@s of 
+the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@}
 running times of $@@challengeSizes@@$ variables.}
 \end{figure}
 
@@ -226,17 +280,19 @@ running times of $@@challengeSizes@@$ variables.}
 % \includegraphics[width=0.8\textwidth]{fittedResidues}
 \par\end{centering}
 
-\caption{\label{fig:Fitted-residues} Residues of the fitted models of the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times. }
+\caption{\label{fig:Fitted-residues} Residues of the fitted models of the 
+@@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} 
+running times. }
 \end{figure}
 
 
-But how much confidence should we have in these models? Are the RMSEs
+But how much confidence should we have in these models? Are the losses
 small enough that we should accept them? To answer this question,
 we assessed the fitted models using the bootstrap approach outlined
 in Section~\ref{sec:Methodology}. Table~\ref{tab:Bootstrap-intervals-of-parameters}
 shows the bootstrap intervals of the model parameters, 
 \bestBoot{Table~\ref{tab:Bootstrap-model-RMSE} 
-shows the bootstrap intervals of the model prediction RMSEs},
+shows the bootstrap intervals of the model prediction losses},
 and Table~\ref{tab:Bootstrap-intervals-support}
 contains the bootstrap intervals for the support data.
 Challenging the models with extrapolation, as shown in 
@@ -251,7 +307,8 @@ Challenging the models with extrapolation, as shown in
 
 \par\end{centering}
 \caption{\label{tab:Bootstrap-intervals-of-parameters} 95\% bootstrap intervals
-of model parameters for the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times}
+of model parameters for the @@statistic@@s of the 
+\randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times}
 
 %Group tables 4 and 5 together. 
 %\end{table*}
@@ -263,8 +320,10 @@ of model parameters for the @@statistic@@s of the \randomizedAlgorithm{per-insta
 % \input{table_Bootstrap-model-Loss}
 
 \par\end{centering}
-\caption{\label{tab:Bootstrap-model-RMSE} \bestBoot{95\% bootstrap confidence intervals
-of model prediction losses for the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times.%
+\caption{\label{tab:Bootstrap-model-RMSE} \bestBoot{95\% bootstrap confidence 
+intervals
+of model prediction losses for the @@statistic@@s of the 
+\randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times.%
 %\medianInterval{To calculate the median RMSEs we used the geometric mean of the intervals for the @@statistic@@s of 
 %the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running times for each instance size. However, the bootstrap 
 %confidence intervals directly capture both sources of uncertainty by reporting the 2.5 and 97.5 
@@ -279,8 +338,11 @@ of model prediction losses for the @@statistic@@s of the \randomizedAlgorithm{pe
 % \input{table_Bootstrap-intervals}
 \par\end{centering}
 
-\caption{\label{tab:Bootstrap-intervals-support} 95\% bootstrap confidence intervals
-for the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running time predictions and observed running times on @@instName@@. 
+\caption{\label{tab:Bootstrap-intervals-support} 95\% bootstrap confidence 
+intervals
+for the @@statistic@@s of the 
+\randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running time 
+predictions and observed running times on @@instName@@. 
 The instance sizes shown here are those used for fitting the models.
 Bootstrap intervals on predictions that are weakly consistent
 with the observed point estimates are shown in boldface 
@@ -298,7 +360,8 @@ by asterisks ({*}).}
 \par\end{centering}
 
 \caption{\label{tab:Bootstrap-intervals-challenge} 95\% bootstrap confidence intervals
-for the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@} running time predictions and observed running times on @@instName@@. 
+for the @@statistic@@s of the \randomizedAlgorithm{per-instance @@perInstanceStatistic@@}
+ running time predictions and observed running times on @@instName@@. 
 The instance sizes shown here are larger than those used for fitting the models.
 Bootstrap intervals on predictions that are weakly consistent
 with the observed data are shown in boldface
@@ -319,11 +382,21 @@ behaviour of @@algName@@ on @@instName@@. We found
 \bibliographystyle{plain}
 \begin{thebibliography}{1}
 
+\bibitem{PusHoo20}
+Yasha Pushak and Holger~H. Hoos.
+\newblock Advanced Statistical Analysis of Empirical Performance Scaling.
+\newblock in {\em Proceedings of the 22nd Genetic and Evolutionary Computation Conference}, (GECCO 2020), pages 236--244, 2020.
+
+\bibitem{PusEtAl20}
+Yasha Pushak, Zongxu Mu and Holger~H. Hoos.
+\newblock Empirical scaling analyzer: An automated system for empirical analysis of performance scaling.
+\newblock {\em AI Communications} -- to appear, 2020.
+
 \bibitem{dubois2015on}
 J{\'e}r{\'e}mie Dubois-Lacoste, Holger~H. Hoos, and Thomas St{\"u}tzle.
 \newblock On the empirical scaling behaviour of state-of-the-art local search
   algorithms for the {E}uclidean {TSP}.
-\newblock In {\em Proceedings of the 17th Genetic and Evolutionary Computation Conference}, (GECCO '15), pages 377--384, 2015.
+\newblock In {\em Proceedings of the 17th Genetic and Evolutionary Computation Conference}, (GECCO 2015), pages 377--384, 2015.
 
 \bibitem{hoos2009bootstrap}
 Holger~H. Hoos.

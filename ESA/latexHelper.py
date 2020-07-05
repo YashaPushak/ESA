@@ -178,9 +178,45 @@ def genTexFile(fileDir, algName, instName, numObsv, sizesTrain, sizesTest, numIn
     #YP: Added a new command.
     if(not numRunsPerInstance == 1):
         customCommands += '\\renewcommand{\\randomizedAlgorithm}[1]{#1} \n'
+    if(statistic != 'mean'):
+        customCommands += '\\renewcommand{\\quantileRegression}[1]{#1} \n'
 
     #YP: added perInstanceStatistic, numRunsPerInstance, and numPerInstanceBootstrapSamples
-    contents = {"customCommands":customCommands, "algName":escapeNonAlNumChars(algName), "instName":escapeNonAlNumChars(instName), "models":modelsStr, "numObservations":numObsv, "largestSupportSize":sizeThreshold, "numBootstrapSamples":"%d" % numBootstrapSamples, "statistic":statistic, "table-Details-dataset-support":"\\input{%s}" % tableDetailsSupportFileName, "table-Details-dataset-challenge":"\\input{%s}" % tableDetailsChallengeFileName, "table-Fitted-models":"\\input{%s}" % tableFittedModelsFileName, "table-Bootstrap-intervals-of-parameters":"\\input{%s}" % tableBootstrapIntervalsParaFileName, "table-Bootstrap-intervals-support":"\\input{%s}" % tableBootstrapIntervalsSupportFileName, "table-Bootstrap-intervals-challenge":"\\input{%s}" % tableBootstrapIntervalsChallengeFileName, "figure-cdfs":"\\includegraphics[width=0.8\\textwidth]{%s}" % figureCdfsFileName, "figure-fittedModels":"\\includegraphics[width=0.8\\textwidth]{%s}" % (figureFittedModelsFileName), "figure-fittedResidues":"\\includegraphics[width=0.8\\textwidth]{%s}" % (figureFittedResiduesFileName), "supportSizes":getSizesStr(sizesTrain, sizesTest, sizeThreshold, True), "challengeSizes":getSizesStr(sizesTrain, sizesTest, sizeThreshold, False), "analysisSummary":analysisSummary[0], "analysisSummaryExplaination":analysisSummary[1], "perInstanceStatistic":perInstanceStatistic, "numRunsPerInstance":numRunsPerInstance, "numPerInstanceBootstrapSamples":numPerInstanceBootstrapSamples, "table-Bootstrap-model-Loss":"\\input{%s}:" % tableBootstrapModelLossFileName, "numInstsTrain": numInstsTrain, "numInstsTest": numInstsTest, "numInsts": numInstsTrain + numInstsTest, 'winnerSelectRule': winnerSelectRule}
+    contents = {
+        "customCommands":customCommands, 
+        "algName":escapeNonAlNumChars(algName), 
+        "instName":escapeNonAlNumChars(instName), 
+        "models":modelsStr, 
+        "numObservations":numObsv,
+        "largestSupportSize":sizeThreshold,
+        "numBootstrapSamples":"%d" % numBootstrapSamples,
+        "statistic":statistic,
+        "table-Details-dataset-support":"\\input{%s}" % tableDetailsSupportFileName, 
+        "table-Details-dataset-challenge":"\\input{%s}" % tableDetailsChallengeFileName,
+        "table-Fitted-models":"\\input{%s}" % tableFittedModelsFileName, 
+        "table-Bootstrap-intervals-of-parameters":"\\input{%s}" % tableBootstrapIntervalsParaFileName, 
+        "table-Bootstrap-intervals-support":"\\input{%s}" % tableBootstrapIntervalsSupportFileName, 
+        "table-Bootstrap-intervals-challenge":"\\input{%s}" % tableBootstrapIntervalsChallengeFileName, 
+        "figure-cdfs":"\\includegraphics[width=0.8\\textwidth]{%s}" % figureCdfsFileName, 
+        "figure-fittedModels":"\\includegraphics[width=0.8\\textwidth]{%s}" % (figureFittedModelsFileName), 
+        "figure-fittedResidues":"\\includegraphics[width=0.8\\textwidth]{%s}" % (figureFittedResiduesFileName), 
+        "supportSizes":getSizesStr(sizesTrain, sizesTest, sizeThreshold, True), 
+        "challengeSizes":getSizesStr(sizesTrain, sizesTest, sizeThreshold, False), 
+        "analysisSummary":analysisSummary[0], 
+        "analysisSummaryExplaination":analysisSummary[1], 
+        "perInstanceStatistic":perInstanceStatistic, 
+        "numRunsPerInstance":numRunsPerInstance, 
+        "numPerInstanceBootstrapSamples":numPerInstanceBootstrapSamples, 
+        "table-Bootstrap-model-Loss":"\\input{%s}:" % tableBootstrapModelLossFileName, 
+        "numInstsTrain": numInstsTrain, 
+        "numInstsTest": numInstsTest, 
+        "numInsts": numInstsTrain + numInstsTest, 
+        "winnerSelectRule": winnerSelectRule,
+        "alpha": alpha,
+        "errorType": ("mean squared error" if statistic == 'mean'
+                      else ("mean absolute error" if statistic == 'median'
+                            else "weighted, mean absolute error"))
+    }
     with open(latexTemplate, "r") as inFile:
         with open("scaling_%s.tex" % removeSubstrs(algName, '/'), "w") as outFile:
             for line in inFile:
