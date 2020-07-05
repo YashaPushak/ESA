@@ -134,7 +134,13 @@ scenario from 51 to 1001 when used in practice.
 
 You should see several output files created in the directory
 `examples/lingeling`, most notably including an automatically generated
-technical report in the form of a pdf. 
+technical report in the form of a pdf:
+ `examples/lingeling/scaling_Lingeline.pdf`. We have included an example
+of what this report should look like for your reference:
+`examples/lingeling/expected_output_report.pdf`. The exact details
+of the analysis will vary, since ESA is itself a randomized procedure;
+however, with high probability the report you produce should be 
+qualitatively identical to the we provide as a reference.
 
 ## Instance File Format
 
