@@ -3,13 +3,16 @@
 All notable changes to this project will be documented in this file.
 
 
-## [2.0] - 2020-07-03
+## [2.0] - 2020-07-08
 
 ### Added
  - ESA now uses a completely re-vamped underlying methodology. Conceptually it is very similar; however, it no longer requires instances grouped into bins of the sames size.
+ - ESA now contains a substantially updated README file which is now the core documentation for using ESA, please see this README for instructions on how to use the new version of ESA.
 
-### TODO
- - Fix all of the documentation
+### Changed
+ - ESA can now be installed as a python package and run from any directory
+ - The technical report preduced by ESA reflects the new methodology used
+ - Custom models not already supported by ESA need to be implemented in userDefinitions.py
 
 ## [1.1] - 2017-07-26
 
